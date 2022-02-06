@@ -13,8 +13,8 @@ pub trait Color: Default + Clone {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct RGB8Color {
     red: u8,
-    blue: u8,
     green: u8,
+    blue: u8,
 }
 
 impl Color for RGB8Color {
@@ -28,6 +28,16 @@ impl Color for RGB8Color {
         self.green.into()
     }
     fn max_val() -> u16 {
-        255
+        u8::MAX.into()
+    }
+}
+
+impl From<(u8,u8,u8)> for RGB8Color {
+    fn from(tup: (u8, u8, u8)) -> Self {
+        Self {
+            red: tup.0,
+            green: tup.1,
+            blue: tup.2,
+        }
     }
 }
