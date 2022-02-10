@@ -1,8 +1,10 @@
 //!This is my graphics class project.
 //!It's done in rust so maybe I will learn something by the end.
 //!Not meant to be useful but hopefully interesting in at least some way.
-use std::process::Command;
-use std::fs::{self, File};
+
+#![warn(missing_docs,missing_debug_implementations,rust_2018_idioms)]
+
+use std::fs::File;
 use std::path::PathBuf;
 use std::error::Error;
 use std::process;
@@ -26,12 +28,12 @@ fn make_cool_screen() -> Screen<RGB8Color> {
     let mut scrn = Screen::<RGB8Color>::with_size(500, 500);
     for i in 0..500 {
         for j in 0..500-i {
-            scrn[[i, i+j]] = (g(i), g(j), g(i)).into();
+            scrn[[i, i+j]] = RGB8Color::new(g(i), g(j), g(i));
         }
     }
     for i in 0..500 {
         for j in 0..500-i {
-            scrn[[i+j, i]] = (g(i), g(j), g(i)).into();
+            scrn[[i+j, i]] = RGB8Color::new(g(i), g(j), g(i));
         }
     }
     scrn
@@ -41,21 +43,11 @@ fn run() -> Result<(), Box<dyn Error>> {
     let scrn = make_cool_screen();
 
     let file_ppm = format!("{}.ppm", FILE_NAME);
-    let file_png = format!("{}.png", FILE_NAME);
     let path = PathBuf::from(&file_ppm);
     //the program just puts the file wherever it was run from because why not...
     //clean it up yourself, I'm too lazy
     let mut file = File::create(&path)?;
-    scrn.write_ppm(&mut file)?;
-
-    //imagemagick dependancy go yay
-    Command::new("convert")
-        .arg(&file_ppm)
-        .arg(&file_png)
-        .status()
-        .expect("Couldn't fine convert and convert the ppm to a png");
-    fs::remove_file(&path)?;
-
+    scrn.write_binary_ppm(&mut file)?;
     Ok(())
 }
 

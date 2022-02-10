@@ -1,7 +1,10 @@
-FILE_NAME=graphics_out.png
+PNG_FILE_NAME=graphics_out.png
+PPM_FILE_NAME=graphics_out.ppm
 dw:
 	cargo run --release
-	display $(FILE_NAME)
+	convert $(PPM_FILE_NAME) $(PNG_FILE_NAME)
+	rm $(PPM_FILE_NAME)
+	display $(PNG_FILE_NAME)
 build:
 	cargo build --release
 run:
