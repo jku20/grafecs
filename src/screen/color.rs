@@ -1,7 +1,7 @@
 ///A trait implemented by structs storing one pixel's color is stored.
 ///As this project is meant only to write to the ppm format, colors
 ///should be `u16`s as that is the maximum color value of that format.
-pub trait Color: Default + Clone {
+pub trait Color: Default + Clone + Copy {
     fn red(&self) -> u16;
     fn blue(&self) -> u16;
     fn green(&self) -> u16;
@@ -30,16 +30,6 @@ impl Color for RGB8Color {
     }
     fn max_val() -> u16 {
         u8::MAX.into()
-    }
-}
-
-impl RGB8Color {
-    pub fn new(red: u8, green: u8, blue: u8) -> Self {
-        Self {
-            red,
-            green,
-            blue,
-        }
     }
 }
 
@@ -76,12 +66,12 @@ impl Color for RGB16Color {
     }
 }
 
-impl RGB16Color {
-    pub fn new(red: u16, green: u16, blue: u16) -> Self {
+impl From<(u16, u16, u16)> for RGB16Color {
+    fn from(c: (u16, u16, u16)) -> Self {
         Self {
-            red,
-            green,
-            blue,
+            red: c.0,
+            green: c.1,
+            blue: c.2,
         }
     }
 }

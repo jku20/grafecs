@@ -48,6 +48,17 @@ impl<T: Color> Screen<T> {
             height,
         }
     }
+
+    ///returns an exclusive width
+    pub fn width(&self) -> usize {
+        self.width
+    }
+
+    ///returns an exclusive height
+    pub fn height(&self) -> usize {
+        self.height
+    }
+
     ///Write contents as ppm to specified file path.
     ///The header writes ascii colors for readability
     pub fn write_ascii_ppm(&self, file: &mut File) -> Result<(), io::Error> {
@@ -76,6 +87,7 @@ impl<T: Color> Screen<T> {
                     panic!("max_val less than red, green, or blue value");
                 }
                 //256 is the magic number for ppm files
+                //this should also mean the below never panics 
                 if max_val < 256 {
                     file.write_all(&[c.red() as u8, c.green() as u8, c.blue() as u8])?;
                 } else {

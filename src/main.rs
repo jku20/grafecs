@@ -10,37 +10,55 @@ use std::error::Error;
 use std::process;
 
 mod screen;
+mod draw;
 
 use screen::Screen;
 use screen::color::RGB8Color;
+use draw::draw_line;
 
 const FILE_NAME: &str = "graphics_out";
 
-fn g(x: usize) -> u8 {
-    let mut x = x as f32;
-    x /= 500.0;
-    x *= 3.0;
-    x -= 3.0;
-    (7.0*(((5.0*x).cos() + (5.0*x).sin() + 3.0)*(0.2*x*x*x*x*x + x*x*x*x + x*x*x + 0.5*x*x + x + 2.0))) as u8
-}
+fn dw_test() -> Screen<RGB8Color> {
+    let xres = 500;
+    let yres = 500;
+    //obviously fine conversion
+    let xres_size = xres as usize;
+    let yres_size = yres as usize;
 
-fn make_cool_screen() -> Screen<RGB8Color> {
-    let mut scrn = Screen::<RGB8Color>::with_size(500, 500);
-    for i in 0..500 {
-        for j in 0..500-i {
-            scrn[[i, i+j]] = RGB8Color::new(g(i), g(j), g(i));
-        }
-    }
-    for i in 0..500 {
-        for j in 0..500-i {
-            scrn[[i+j, i]] = RGB8Color::new(g(i), g(j), g(i));
-        }
-    }
+    let mut scrn = Screen::<RGB8Color>::with_size(xres_size, yres_size);
+
+    //octants 1 and 5
+    let c = (0, 255, 0).into();
+    draw_line((0, 0), (xres-1, yres-1), c, &mut scrn);
+    draw_line((0, 0), (xres-1, yres/2), c, &mut scrn);
+    draw_line((xres-1, yres-1), (0, yres/2), c, &mut scrn);
+
+    //octants 8 and 4
+    let c = (0, 255, 255).into();
+    draw_line((0, yres-1), (xres-1, 0), c, &mut scrn);
+    draw_line((0, yres-1), (xres-1, yres/2), c, &mut scrn);
+    draw_line((xres-1, 0), (0, yres/2), c, &mut scrn);
+
+    //octants 2 and 6
+    let c = (255, 0, 0).into();
+    draw_line((0, 0), (xres/2, yres-1), c, &mut scrn);
+    draw_line((xres-1, yres-1), (xres/2, 0), c, &mut scrn);
+
+    //octants 7 and 3
+    let c = (255, 0, 255).into();
+    draw_line((0, yres-1), (xres/2, 0), c, &mut scrn);
+    draw_line((xres-1, 0), (xres/2, yres-1), c, &mut scrn);
+
+    //horizontal and vertical
+    let c = (255, 255, 0).into();
+    draw_line((0, yres/2), (xres-1, yres/2), c, &mut scrn);
+    draw_line((xres/2, 0), (xres/2, yres-1), c, &mut scrn);
+
     scrn
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-    let scrn = make_cool_screen();
+    let scrn = dw_test();
 
     let file_ppm = format!("{}.ppm", FILE_NAME);
     let path = PathBuf::from(&file_ppm);
