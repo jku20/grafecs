@@ -11,55 +11,38 @@ pub fn plot<T: Color>(p: Point, color: T, scrn: &mut Screen<T>) {
     }
 }
 
-///Draws a line of pixels to the screen using Bresenham's line algorithm.
+///Draws a line of pixels to the screen using Bresenham's line algorithm
+///or a similar algorithm described [here](https://zingl.github.io/Bresenham.pdf).
 ///Pixels not visable on the screen (i.e. (-1, 4)) will just be ignored.
 ///The pixels are inclusive meaning both p1 and p2 may be drawn
 pub fn draw_line<T: Color>(p1: Point, p2: Point, color: T, scrn: &mut Screen<T>) {
-    //non-working maybe soon to work nice impl
-    /*
+    //algorithm by Alois Zingl (https://zingl.github.io/Bresenham.pdf)
+    //used because it is super clean
     let dx = (p2.0 - p1.0).abs();
-    let dy = (p2.1 - p1.1).abs();
+    let dy = -(p2.1 - p1.1).abs();
     let sx = (p2.0 - p1.0).signum();
     let sy = (p2.1 - p1.1).signum();
 
-    let (s, rdx, rdy, rsx, rsy, mut x, mut y);
-    if dx > dy {
-        s = false;
-        rdx = dx;
-        rdy = dy;
-        rsx = sx;
-        rsy = sy;
-        x = p1.0;
-        y = p1.1;
-    } else {
-        s = true;
-        rdx = dy;
-        rdy = dx;
-        rsx = sy;
-        rsy = sx;
-        x = p1.1;
-        y = p1.0;
-    }
-
-    let mut d = 2 * rdy - rdx;
-
-    let rdx = 2 * rdx;
-    let rdy = 2 * rdy;
-    while x*rsx <= p2.0*rsx && y*rsy <= p2.1*rsy {
-        if s {
-            plot((y, x), color, scrn);
-        } else {
-            plot((x, y), color, scrn);
+    let mut e = dx + dy;
+    let (mut x, mut y) = (p1.0, p1.1);
+    loop {
+        plot((x, y), color, scrn);
+        if x == p2.0 && y == p2.1 {
+            break;
         }
-        if d > 0 {
+        let et = e * 2;
+        if et >= dy {
+            x += sx;
+            e += dy;
+        }
+        if et <= dx {
             y += sy;
-            d -= rdx;
+            e += dx;
         }
-        x += sx;
-        d += rdy;
     }
-    */
-    //current working simpler implementation
+
+    //more traditional Bresenham's line algorithm implementation by me
+    /*
     let lp = p1.min(p2);
     let rp = p1.max(p2);
     let dx = rp.0 - lp.0;
@@ -122,4 +105,5 @@ pub fn draw_line<T: Color>(p1: Point, p2: Point, color: T, scrn: &mut Screen<T>)
             }
         }
     }
+    */
 }
