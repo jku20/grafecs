@@ -13,7 +13,7 @@ mod screen;
 mod draw;
 
 use screen::Screen;
-use screen::color::RGB8Color;
+use screen::color::{Color, RGB8Color};
 use draw::draw_line;
 
 const FILE_NAME: &str = "graphics_out";
@@ -57,8 +57,84 @@ fn dw_test() -> Screen<RGB8Color> {
     scrn
 }
 
+//yeah my code to draw these images is pretty bad
+//I swear the actual graphics engine code is better
+fn is_prime(n: i32) -> bool {
+    let mut i = 2;
+    while i * i <= n {
+        if n % i == 0 {
+            return false;
+        }
+        i += 1;
+    }
+    true
+}
+
+fn smooth(s: &mut Screen<RGB8Color>) {
+    for i in 0..s.width() {
+        for j in 0..s.height() {
+            let c = s[[i, j]];
+            let (mut r, mut g, mut b) = (c.red(), c.green(), c.blue());
+            for (dx, dy) in [(0i32,1i32), (0,-1), (1,0), (-1,0)] {
+                let nx = (i as i32 + dx).min(s.width() as i32 - 1).max(0);
+                let ny = (j as i32 + dy).min(s.height() as i32 - 1).max(0);
+                let c = s[[nx as usize, ny as usize]];
+                r += c.red();
+                g += c.green();
+                b += c.blue();
+            }
+            s[[i, j]] = (r as u8/5, g as u8/5, b as u8/5).into();
+        }
+    }
+}
+
+fn rot(s: &mut Screen<RGB8Color>) {
+    let h = s.height();
+    for i in 0..s.width() {
+        for j in i+1..s.height() {
+            let t = s[[i, h - j]];
+            s[[i, h - j]] = s[[i, j]];
+            s[[i, j]] = t;
+        }
+    }
+}
+
+fn make_cool_screen() -> Screen<RGB8Color> {
+    let res = 500;
+    let mut s = Screen::with_size(res, res);
+
+    let mut cur = 100000000;
+    for i in 0..=1000 {
+        cur += 1;
+        let mut gp = 1;
+        while !is_prime(cur) {
+            gp += 1;
+            cur += 1;
+        }
+        let nm = (gp) as u8;
+        draw_line((gp, i), (i, gp), (nm, 50, (i/3) as u8).into(), &mut s);
+    }
+    
+    rot(&mut s);
+
+    for _ in 0..15 {
+        smooth(&mut s);
+    }
+
+    for i in 0..s.width() {
+        for j in 0..s.height() {
+            let c = s[[i, j]];
+            let d = 240;
+            s[[i, j]] = (c.blue() as u8 + d, c.green() as u8 + d, c.red() as u8 + d).into();
+        }
+    }
+
+    s
+}
+
 fn run() -> Result<(), Box<dyn Error>> {
-    let scrn = dw_test();
+    //let scrn = dw_test();
+    let scrn = make_cool_screen();
 
     let file_ppm = format!("{}.ppm", FILE_NAME);
     let path = PathBuf::from(&file_ppm);
