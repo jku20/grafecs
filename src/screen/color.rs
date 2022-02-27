@@ -33,7 +33,7 @@ impl Color for RGB8Color {
     }
 }
 
-impl From<(u8,u8,u8)> for RGB8Color {
+impl From<(u8, u8, u8)> for RGB8Color {
     fn from(tup: (u8, u8, u8)) -> Self {
         Self {
             red: tup.0,

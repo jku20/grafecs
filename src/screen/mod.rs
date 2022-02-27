@@ -63,7 +63,13 @@ impl<T: Color> Screen<T> {
     ///The header writes ascii colors for readability
     pub fn write_ascii_ppm(&self, file: &mut File) -> Result<(), io::Error> {
         let mut file = BufWriter::new(file);
-        write!(file, "P3\n{} {}\n{}\n", self.width, self.height, T::max_val())?;
+        write!(
+            file,
+            "P3\n{} {}\n{}\n",
+            self.width,
+            self.height,
+            T::max_val()
+        )?;
         for v in self.grid.iter().rev() {
             for c in v {
                 write!(file, "{} {} {} ", c.red(), c.green(), c.blue())?;
@@ -79,7 +85,13 @@ impl<T: Color> Screen<T> {
     pub fn write_binary_ppm(&self, file: &mut File) -> Result<(), io::Error> {
         let mut file = BufWriter::new(file);
         let max_val = T::max_val();
-        write!(file, "P6\n{} {}\n{}\n", self.width, self.height, T::max_val())?;
+        write!(
+            file,
+            "P6\n{} {}\n{}\n",
+            self.width,
+            self.height,
+            T::max_val()
+        )?;
         for v in self.grid.iter().rev() {
             for c in v {
                 //panic on malformed max_val
@@ -87,11 +99,11 @@ impl<T: Color> Screen<T> {
                     panic!("max_val less than red, green, or blue value");
                 }
                 //256 is the magic number for ppm files
-                //this should also mean the below never panics 
+                //this should also mean the below never panics
                 if max_val < 256 {
                     file.write_all(&[c.red() as u8, c.green() as u8, c.blue() as u8])?;
                 } else {
-                    file.write_all(&c.red().to_le_bytes())?; 
+                    file.write_all(&c.red().to_le_bytes())?;
                     file.write_all(&c.green().to_le_bytes())?;
                     file.write_all(&c.blue().to_le_bytes())?;
                 }

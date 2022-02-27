@@ -1,4 +1,4 @@
-use crate::screen::{Screen, color::Color};
+use crate::screen::{color::Color, Screen};
 
 type Point = (i32, i32);
 
