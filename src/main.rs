@@ -13,129 +13,80 @@ mod draw;
 mod fatrix;
 mod screen;
 
-use screen::color::{Color, RGB8Color};
+use screen::color::RGB8Color;
 use screen::Screen;
+use fatrix::{Fatrix, Modtrix};
 
 const FILE_NAME: &str = "graphics_out";
 
-/*
 fn dw_test() -> Screen<RGB8Color> {
     let xres = 500;
     let yres = 500;
-    //obviously fine conversion
-    let xres_size = xres as usize;
-    let yres_size = yres as usize;
 
-    let mut scrn = Screen::<RGB8Color>::with_size(xres_size, yres_size);
+    let mut m2 = Fatrix::new();
+    m2.reserve(2);
+    println!("Testing add_edge. Adding (1, 2, 3), (4, 5, 6) m2 =");
+    m2.add_edge((1.0, 2.0, 3.0), (4.0, 5.0, 6.0));
+    println!("{:?}", m2);
 
-    //octants 1 and 5
-    let c = (0, 255, 0).into();
-    scrn.draw_line((0, 0), (xres - 1, yres - 1), c);
-    scrn.draw_line((0, 0), (xres - 1, yres / 2), c );
-    scrn.draw_line((xres - 1, yres - 1), (0, yres / 2), c);
+    println!("Testing ident. m1 = ");
+    let m1 = Modtrix::IDENT;
+    println!("{:?}", m1);
 
-    //octants 8 and 4
-    let c = (0, 255, 255).into();
-    scrn.draw_line((0, yres - 1), (xres - 1, 0), c);
-    scrn.draw_line((0, yres - 1), (xres - 1, yres / 2), c);
-    scrn.draw_line((xres - 1, 0), (0, yres / 2), c);
+    println!("Testing Matrix mult. m1 * m2 =");
+    println!("{:?}", m1 * m2.clone());
 
-    //octants 2 and 6
-    let c = (255, 0, 0).into();
-    scrn.draw_line((0, 0), (xres / 2, yres - 1), c);
-    scrn.draw_line((xres - 1, yres - 1), (xres / 2, 0), c);
+    println!("Testing Matrix mult. m1 =");
+    let m1 = Modtrix::from([
+        [1.00, 4.00, 7.00, 10.00],
+        [2.00, 5.00, 8.00, 11.00],
+        [3.00, 6.00, 9.00, 12.00],
+        [1.00, 1.00, 1.00, 1.00],
+    ]);
+    println!("{:?}", m1);
 
-    //octants 7 and 3
-    let c = (255, 0, 255).into();
-    scrn.draw_line((0, yres - 1), (xres / 2, 0), c);
-    scrn.draw_line((xres - 1, 0), (xres / 2, yres - 1), c);
+    println!("Testing Matrix mult. m1 * m2=");
+    println!("{:?}", m1 * m2);
 
-    //horizontal and vertical
-    let c = (255, 255, 0).into();
-    scrn.draw_line((0, yres / 2), (xres - 1, yres / 2), c);
-    scrn.draw_line((xres / 2, 0), (xres / 2, yres - 1), c);
+    let mut edges = Fatrix::new();
+    edges.add_edge((50.0, 450.0, 0.0), (100.0, 450.0, 0.0));
+    edges.add_edge((50.0, 450.0, 0.0), (50.0, 400.0, 0.0));
+    edges.add_edge((100.0, 450.0, 0.0), (100.0, 400.0, 0.0));
+    edges.add_edge((100.0, 400.0, 0.0), (50.0, 400.0, 0.0));
 
-    scrn
+    let p1 = (200.0, 450.0, 0.0);
+    let p2 = (250.0, 450.0, 0.0);
+    let p3 = (200.0, 400.0, 0.0);
+    let p4 = (250.0, 400.0, 0.0);
+    edges.add_edge(p1, p2);
+    edges.add_edge(p1, p3);
+    edges.add_edge(p2, p4);
+    edges.add_edge(p4, p3);
+
+    let p1 = (150.0, 400.0, 0.0);
+    let p2 = (130.0, 360.0, 0.0);
+    let p3 = (170.0, 360.0, 0.0);
+
+    edges.add_edge(p1, p2);
+    edges.add_edge(p1, p3);
+    edges.add_edge(p2, p3);
+
+    let p1 = (100.0, 340.0, 0.0);
+    let p2 = (200.0, 340.0, 0.0);
+    let p3 = (100.0, 320.0, 0.0);
+    let p4 = (200.0, 320.0, 0.0);
+
+    edges.add_edge(p1, p2);
+    edges.add_edge(p3, p4);
+    edges.add_edge(p1, p3);
+    edges.add_edge(p2, p4);
+
+
+    edges.screen::<RGB8Color>((100, 255, 255).into(), xres, yres)
 }
-
-//yeah my code to draw these images is pretty bad
-//I swear the actual graphics engine code is better
-fn is_prime(n: i32) -> bool {
-    let mut i = 2;
-    while i * i <= n {
-        if n % i == 0 {
-            return false;
-        }
-        i += 1;
-    }
-    true
-}
-
-fn smooth(s: &mut Screen<RGB8Color>) {
-    for i in 0..s.width() {
-        for j in 0..s.height() {
-            let c = s[[i, j]];
-            let (mut r, mut g, mut b) = (c.red(), c.green(), c.blue());
-            for (dx, dy) in [(0i32, 1i32), (0, -1), (1, 0), (-1, 0)] {
-                let nx = (i as i32 + dx).min(s.width() as i32 - 1).max(0);
-                let ny = (j as i32 + dy).min(s.height() as i32 - 1).max(0);
-                let c = s[[nx as usize, ny as usize]];
-                r += c.red();
-                g += c.green();
-                b += c.blue();
-            }
-            s[[i, j]] = (r as u8 / 5, g as u8 / 5, b as u8 / 5).into();
-        }
-    }
-}
-
-fn rot(s: &mut Screen<RGB8Color>) {
-    let h = s.height();
-    for i in 0..s.width() {
-        for j in i + 1..s.height() {
-            let t = s[[i, h - j]];
-            s[[i, h - j]] = s[[i, j]];
-            s[[i, j]] = t;
-        }
-    }
-}
-
-fn make_cool_screen() -> Screen<RGB8Color> {
-    let res = 500;
-    let mut s = Screen::with_size(res, res);
-
-    let mut cur = 100000000;
-    for i in 0..=1000 {
-        cur += 1;
-        let mut gp = 1;
-        while !is_prime(cur) {
-            gp += 1;
-            cur += 1;
-        }
-        let nm = (gp) as u8;
-        draw_line((gp, i), (i, gp), (nm, 50, (i / 3) as u8).into(), &mut s);
-    }
-
-    rot(&mut s);
-
-    for _ in 0..15 {
-        smooth(&mut s);
-    }
-
-    for i in 0..s.width() {
-        for j in 0..s.height() {
-            let c = s[[i, j]];
-            let d = 240;
-            s[[i, j]] = (c.blue() as u8 + d, c.green() as u8 + d, c.red() as u8 + d).into();
-        }
-    }
-
-    s
-}
-*/
 
 fn run() -> Result<(), Box<dyn Error>> {
-    //let scrn = dw_test();
+    let scrn = dw_test();
     //let scrn = make_cool_screen();
 
     let file_ppm = format!("{}.ppm", FILE_NAME);
@@ -143,7 +94,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     //the program just puts the file wherever it was run from because why not...
     //clean it up yourself, I'm too lazy
     let mut file = File::create(&path)?;
-    //scrn.write_binary_ppm(&mut file)?;
+    scrn.write_binary_ppm(&mut file)?;
     Ok(())
 }
 

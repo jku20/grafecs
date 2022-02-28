@@ -5,7 +5,7 @@ use crate::screen::{color::Color, Screen};
 
 use std::fmt;
 use std::fmt::Debug;
-use std::ops::{Index, IndexMut, Mul};
+use std::ops::Mul;
 
 type Float = f32;
 ///The point is stored (x, y, z)
@@ -14,7 +14,8 @@ type Point = (Float, Float, Float);
 ///A 4xN matrix. Pretty standard. It has that size limitation because I don't need a
 ///general matrix for anything. The same goes for why this hardcodes the type.
 ///It is stored transposed because that is easier.
-struct Fatrix {
+#[derive(Clone)]
+pub struct Fatrix {
     store: Vec<[Float; 4]>,
 }
 
@@ -55,13 +56,14 @@ impl Fatrix {
         }
     }
 
+    ///Creates an empty Fatrix
+    pub fn new() -> Fatrix {
+        Self::with_size(0)
+    }
+
     ///Reserves a certain amount of space for possibly better performance.
     pub fn reserve(&mut self, r: usize) {
         self.store.reserve(r);
-    }
-
-    pub fn len(&self) -> usize {
-        self.store.len()
     }
 
     fn add_point(&mut self, p: Point) {
@@ -76,6 +78,7 @@ impl Fatrix {
     pub fn screen<T: Color>(&self, color: T, width: usize, height: usize) -> Screen<T> {
         self.store
             .windows(2)
+            .step_by(2)
             .fold(Screen::<T>::with_size(width, height), |mut acc, w| {
                 let p1 = (w[0][0] as i32, w[0][1] as i32);
                 let p2 = (w[1][0] as i32, w[1][1] as i32);
@@ -88,7 +91,8 @@ impl Fatrix {
 ///This is in actuality just a 4x4 matrix, but it is stored a bit differently and has the sole
 ///purpose of being used to modify a Fatrix. Separated from Fatrix as that has a different purpose,
 ///to store a representation of some space. This matrix is stored more traditionally.
-struct Modtrix {
+#[derive(Clone)]
+pub struct Modtrix {
     store: [[Float; 4]; 4],
 }
 
@@ -104,6 +108,7 @@ impl Debug for Modtrix {
     }
 }
 
+/*
 ///May panic on index out of bounds.
 impl Index<[usize; 2]> for Modtrix {
     type Output = Float;
@@ -118,6 +123,7 @@ impl IndexMut<[usize; 2]> for Modtrix {
         &mut self.store[index[0]][index[1]]
     }
 }
+*/
 
 impl Modtrix {
     pub const IDENT: Self = Modtrix {
@@ -128,6 +134,14 @@ impl Modtrix {
             [0.0, 0.0, 0.0, 1.0],
         ],
     };
+}
+
+impl From<[[Float; 4]; 4]> for Modtrix {
+    fn from(store: [[Float; 4]; 4]) -> Self {
+        Self {
+            store,
+        }
+    }
 }
 
 impl Mul<Fatrix> for Modtrix {
