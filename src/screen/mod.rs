@@ -6,6 +6,8 @@ pub mod color;
 
 use color::Color;
 
+type Point = (i32, i32);
+
 ///Screen containting a grid of colors.
 ///This is the final destination before the grid is written to a file.
 ///Kind of just a wrapper for a color vector.
@@ -41,6 +43,7 @@ impl<T: Color> IndexMut<[usize; 2]> for Screen<T> {
 }
 
 impl<T: Color> Screen<T> {
+
     pub fn with_size(width: usize, height: usize) -> Screen<T> {
         Screen {
             grid: vec![vec![T::default(); width]; height],
@@ -59,25 +62,45 @@ impl<T: Color> Screen<T> {
         self.height
     }
 
-    ///Write contents as ppm to specified file path.
-    ///The header writes ascii colors for readability
-    pub fn write_ascii_ppm(&self, file: &mut File) -> Result<(), io::Error> {
-        let mut file = BufWriter::new(file);
-        write!(
-            file,
-            "P3\n{} {}\n{}\n",
-            self.width,
-            self.height,
-            T::max_val()
-        )?;
-        for v in self.grid.iter().rev() {
-            for c in v {
-                write!(file, "{} {} {} ", c.red(), c.green(), c.blue())?;
-            }
-            writeln!(file)?;
+    ///Plots a point p to the screen.
+    ///Points which are off the screen will be ignored.
+    ///Should never panic except for really weird cases I don't understand due to the order of the
+    ///checks.
+    pub fn plot(&mut self, p: Point, color: T) {
+        if p.0 >= 0 && p.1 >= 0 && (p.0 as usize) < self.width() && (p.1 as usize) < self.height() {
+            self[[p.0 as usize, p.1 as usize]] = color;
         }
-        file.flush()?;
-        Ok(())
+    }
+
+    ///Draws a line of pixels to the screen using Bresenham's line algorithm
+    ///or a similar algorithm described [here](https://zingl.github.io/Bresenham.pdf).
+    ///Pixels not visable on the screen (i.e. (-1, 4)) will just be ignored.
+    ///The pixels are inclusive meaning both p1 and p2 may be drawn
+    pub fn draw_line(&mut self, p1: Point, p2: Point, color: T) {
+        //algorithm by Alois Zingl (https://zingl.github.io/Bresenham.pdf)
+        //used because it is super clean
+        let dx = (p2.0 - p1.0).abs();
+        let dy = -(p2.1 - p1.1).abs();
+        let sx = (p2.0 - p1.0).signum();
+        let sy = (p2.1 - p1.1).signum();
+
+        let mut e = dx + dy;
+        let (mut x, mut y) = (p1.0, p1.1);
+        loop {
+            self.plot((x, y), color);
+            if x == p2.0 && y == p2.1 {
+                break;
+            }
+            let et = e * 2;
+            if et >= dy {
+                x += sx;
+                e += dy;
+            }
+            if et <= dx {
+                y += sy;
+                e += dx;
+            }
+        }
     }
 
     ///Write contents as ppm to specified file path.
@@ -112,4 +135,27 @@ impl<T: Color> Screen<T> {
         file.flush()?;
         Ok(())
     }
+
+    /*
+    ///Write contents as ppm to specified file path.
+    ///The header writes ascii colors for readability
+    pub fn write_ascii_ppm(&self, file: &mut File) -> Result<(), io::Error> {
+        let mut file = BufWriter::new(file);
+        write!(
+            file,
+            "P3\n{} {}\n{}\n",
+            self.width,
+            self.height,
+            T::max_val()
+        )?;
+        for v in self.grid.iter().rev() {
+            for c in v {
+                write!(file, "{} {} {} ", c.red(), c.green(), c.blue())?;
+            }
+            writeln!(file)?;
+        }
+        file.flush()?;
+        Ok(())
+    }
+    */
 }

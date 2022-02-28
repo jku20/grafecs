@@ -1,10 +1,15 @@
 //!fatrix, for four matrix (or fake matrix if you so chooes).
 //!It is a struct for 4xN matricies.
+
+use crate::screen::{color::Color, Screen};
+
 use std::fmt;
 use std::fmt::Debug;
 use std::ops::{Index, IndexMut, Mul};
 
 type Float = f32;
+///The point is stored (x, y, z)
+type Point = (Float, Float, Float);
 
 ///A 4xN matrix. Pretty standard. It has that size limitation because I don't need a
 ///general matrix for anything. The same goes for why this hardcodes the type.
@@ -25,6 +30,7 @@ impl Debug for Fatrix {
     }
 }
 
+/*
 ///May panic on index out of bounds.
 impl Index<[usize; 2]> for Fatrix {
     type Output = Float;
@@ -39,6 +45,7 @@ impl IndexMut<[usize; 2]> for Fatrix {
         &mut self.store[index[1]][index[0]]
     }
 }
+*/
 
 impl Fatrix {
     ///Creates a Fatrix with a certain amount of columns
@@ -48,8 +55,33 @@ impl Fatrix {
         }
     }
 
+    ///Reserves a certain amount of space for possibly better performance.
+    pub fn reserve(&mut self, r: usize) {
+        self.store.reserve(r);
+    }
+
     pub fn len(&self) -> usize {
         self.store.len()
+    }
+
+    fn add_point(&mut self, p: Point) {
+        self.store.push([p.0, p.1, p.2, 1.0]);
+    }
+
+    pub fn add_edge(&mut self, p: Point, q: Point) {
+        self.add_point(p);
+        self.add_point(q);
+    }
+
+    pub fn screen<T: Color>(&self, color: T, width: usize, height: usize) -> Screen<T> {
+        self.store
+            .windows(2)
+            .fold(Screen::<T>::with_size(width, height), |mut acc, w| {
+                let p1 = (w[0][0] as i32, w[0][1] as i32);
+                let p2 = (w[1][0] as i32, w[1][1] as i32);
+                acc.draw_line(p1, p2, color);
+                acc
+            })
     }
 }
 

@@ -13,12 +13,12 @@ mod draw;
 mod fatrix;
 mod screen;
 
-use draw::draw_line;
 use screen::color::{Color, RGB8Color};
 use screen::Screen;
 
 const FILE_NAME: &str = "graphics_out";
 
+/*
 fn dw_test() -> Screen<RGB8Color> {
     let xres = 500;
     let yres = 500;
@@ -30,30 +30,30 @@ fn dw_test() -> Screen<RGB8Color> {
 
     //octants 1 and 5
     let c = (0, 255, 0).into();
-    draw_line((0, 0), (xres - 1, yres - 1), c, &mut scrn);
-    draw_line((0, 0), (xres - 1, yres / 2), c, &mut scrn);
-    draw_line((xres - 1, yres - 1), (0, yres / 2), c, &mut scrn);
+    scrn.draw_line((0, 0), (xres - 1, yres - 1), c);
+    scrn.draw_line((0, 0), (xres - 1, yres / 2), c );
+    scrn.draw_line((xres - 1, yres - 1), (0, yres / 2), c);
 
     //octants 8 and 4
     let c = (0, 255, 255).into();
-    draw_line((0, yres - 1), (xres - 1, 0), c, &mut scrn);
-    draw_line((0, yres - 1), (xres - 1, yres / 2), c, &mut scrn);
-    draw_line((xres - 1, 0), (0, yres / 2), c, &mut scrn);
+    scrn.draw_line((0, yres - 1), (xres - 1, 0), c);
+    scrn.draw_line((0, yres - 1), (xres - 1, yres / 2), c);
+    scrn.draw_line((xres - 1, 0), (0, yres / 2), c);
 
     //octants 2 and 6
     let c = (255, 0, 0).into();
-    draw_line((0, 0), (xres / 2, yres - 1), c, &mut scrn);
-    draw_line((xres - 1, yres - 1), (xres / 2, 0), c, &mut scrn);
+    scrn.draw_line((0, 0), (xres / 2, yres - 1), c);
+    scrn.draw_line((xres - 1, yres - 1), (xres / 2, 0), c);
 
     //octants 7 and 3
     let c = (255, 0, 255).into();
-    draw_line((0, yres - 1), (xres / 2, 0), c, &mut scrn);
-    draw_line((xres - 1, 0), (xres / 2, yres - 1), c, &mut scrn);
+    scrn.draw_line((0, yres - 1), (xres / 2, 0), c);
+    scrn.draw_line((xres - 1, 0), (xres / 2, yres - 1), c);
 
     //horizontal and vertical
     let c = (255, 255, 0).into();
-    draw_line((0, yres / 2), (xres - 1, yres / 2), c, &mut scrn);
-    draw_line((xres / 2, 0), (xres / 2, yres - 1), c, &mut scrn);
+    scrn.draw_line((0, yres / 2), (xres - 1, yres / 2), c);
+    scrn.draw_line((xres / 2, 0), (xres / 2, yres - 1), c);
 
     scrn
 }
@@ -132,17 +132,18 @@ fn make_cool_screen() -> Screen<RGB8Color> {
 
     s
 }
+*/
 
 fn run() -> Result<(), Box<dyn Error>> {
     //let scrn = dw_test();
-    let scrn = make_cool_screen();
+    //let scrn = make_cool_screen();
 
     let file_ppm = format!("{}.ppm", FILE_NAME);
     let path = PathBuf::from(&file_ppm);
     //the program just puts the file wherever it was run from because why not...
     //clean it up yourself, I'm too lazy
     let mut file = File::create(&path)?;
-    scrn.write_binary_ppm(&mut file)?;
+    //scrn.write_binary_ppm(&mut file)?;
     Ok(())
 }
 
