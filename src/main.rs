@@ -10,8 +10,8 @@ use std::path::PathBuf;
 use std::process;
 
 mod draw;
-mod screen;
 mod fatrix;
+mod screen;
 
 use draw::draw_line;
 use screen::color::{Color, RGB8Color};
