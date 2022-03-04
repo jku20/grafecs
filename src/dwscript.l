@@ -1,0 +1,13 @@
+%%
+[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+) "NUM"
+[xyz] "AXIS"
+(\w+)(\.?w+)+ "FILE"
+\s "SPACE"
+line "LINE"
+ident "IDENT"
+scale "SCALE"
+move "MOVE"
+rotate "ROTATE"
+apply "APPLY"
+display "DISPLAY"
+save "SAVE"

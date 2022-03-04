@@ -3,11 +3,14 @@
 
 use crate::screen::{color::Color, Screen};
 
-use std::fmt;
-use std::fmt::Debug;
+use std::fmt::{self, Debug};
 use std::ops::Mul;
 
+
+//when Float is updated, make sure to update the below three lines as well
 type Float = f32;
+const DEGREE_TO_RADIAN: Float = std::f32::consts::PI / 180.0;
+
 ///The point is stored (x, y, z)
 type Point = (Float, Float, Float);
 
@@ -30,23 +33,6 @@ impl Debug for Fatrix {
         Ok(())
     }
 }
-
-/*
-///May panic on index out of bounds.
-impl Index<[usize; 2]> for Fatrix {
-    type Output = Float;
-    fn index(&self, index: [usize; 2]) -> &Self::Output {
-        &self.store[index[1]][index[0]]
-    }
-}
-
-///May panic on index out of bounds.
-impl IndexMut<[usize; 2]> for Fatrix {
-    fn index_mut(&mut self, index: [usize; 2]) -> &mut Float {
-        &mut self.store[index[1]][index[0]]
-    }
-}
-*/
 
 impl Fatrix {
     ///Creates a Fatrix with a certain amount of columns
@@ -108,23 +94,6 @@ impl Debug for Modtrix {
     }
 }
 
-/*
-///May panic on index out of bounds.
-impl Index<[usize; 2]> for Modtrix {
-    type Output = Float;
-    fn index(&self, index: [usize; 2]) -> &Self::Output {
-        &self.store[index[0]][index[1]]
-    }
-}
-
-///May panic on index out of bounds.
-impl IndexMut<[usize; 2]> for Modtrix {
-    fn index_mut(&mut self, index: [usize; 2]) -> &mut Float {
-        &mut self.store[index[0]][index[1]]
-    }
-}
-*/
-
 impl Modtrix {
     pub const IDENT: Self = Modtrix {
         store: [
@@ -142,6 +111,89 @@ impl From<[[Float; 4]; 4]> for Modtrix {
             store,
         }
     }
+}
+
+///creates translation matrix with given x, y, z values to transform by
+#[macro_export]
+macro_rules! trans_matrix {
+    ( $x:expr, $y:expr, $z:expr ) => {
+        Modtrix::from([
+            [1, 0, 0, $x],
+            [0, 1, 0, $y],
+            [0, 0, 1, $z],
+            [0, 0, 0, 1],
+        ])
+    };
+}
+
+///creates dilation (scale) matrix given how much each to scale on the x, y, or z, axis
+#[macro_export]
+macro_rules! scale_matrix {
+    ( $x:expr, $y:expr, $z:expr ) => {
+        Modtrix::from([
+            [$x, 0, 0, 0],
+            [0, $y, 0, 0],
+            [0, 0, $z, 0],
+            [0, 0, 0, 1],
+        ])
+    };
+}
+
+///creates rotation matrix around the z axis given given an angle of rotation in degrees rotating
+///counter clockwise
+#[macro_export]
+macro_rules! rotz_matrix {
+    ( $t:expr ) => {
+        {
+            let d = DEGREE_TO_RADIAN * t;
+            let sd = d.sin();
+            let cd = d.cos();
+            Modtrix::from([
+                [cd, -sd, 0, 0],
+                [sd, cd, 0, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1],
+            ])
+        }
+    };
+}
+
+///creates rotation matrix around the x axis given given an angle of rotation in degrees rotating
+///counter clockwise
+#[macro_export]
+macro_rules! rotx_matrix {
+    ( $t:expr ) => {
+        {
+            let d = DEGREE_TO_RADIAN * t;
+            let sd = d.sin();
+            let cd = d.cos();
+            Modtrix::from([
+                [1, 0, 0, 0],
+                [0, cd, -sd, 0],
+                [0, sd, cd, 0],
+                [0, 0, 0, 1],
+            ])
+        }
+    };
+}
+
+///creates rotation matrix around the y axis given given an angle of rotation in degrees rotating
+///counter clockwise
+#[macro_export]
+macro_rules! roty_matrix {
+    ( $t:expr ) => {
+        {
+            let d = DEGREE_TO_RADIAN * t;
+            let sd = d.sin();
+            let cd = d.cos();
+            Modtrix::from([
+                [cd, 0, sd, 0],
+                [0, 1, 0, 0],
+                [-sd, 0, cd, 0],
+                [0, 0, 0, 1],
+            ])
+        }
+    };
 }
 
 impl Mul<Fatrix> for Modtrix {
