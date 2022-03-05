@@ -1,7 +1,7 @@
 %%
 [+-]?([0-9]+([.][0-9]*)?|[.][0-9]+) "NUM"
 [xyz] "AXIS"
-(\w+)(\.?w+)+ "FILE"
+\w+\.\w+ "FILE"
 \s "SPACE"
 line "LINE"
 ident "IDENT"

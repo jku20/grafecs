@@ -54,7 +54,7 @@ Move -> Result<Expr, ()>:
 Rotate -> Result<Expr, ()>:
     'ROTATE' 'SPACE' Axis 'SPACE' Num
     {
-        Ok( Expr::Rotate { span: $span, args: [Box::new($3?), Box::new($5?)] } )
+        Ok( Expr::Rotate { span: $span, axis: Box::new($3?), deg: Box::new($5?) } )
     }
     ;
 
@@ -67,7 +67,7 @@ Display -> Result<Expr, ()>:
     ;
 
 Save -> Result<Expr, ()>:
-    'SAVE' 'SPACE' File { Ok( Expr::Save { span: $span, args: [Box::new($3?)] } ) }
+    'SAVE' 'SPACE' File { Ok( Expr::Save { span: $span, file: Box::new($3?) } ) }
     ;
 
 Num -> Result<Expr, ()>:
@@ -118,7 +118,8 @@ pub enum Expr {
     },
     Rotate {
         span: Span,
-        args: [Box<Expr>; 2],
+        axis: Box<Expr>,
+        deg: Box<Expr>,
     },
     Apply {
         span: Span,
@@ -128,7 +129,7 @@ pub enum Expr {
     },
     Save {
         span: Span,
-        args: [Box<Expr>; 1],
+        file: Box<Expr>,
     },
     Num {
         span: Span,

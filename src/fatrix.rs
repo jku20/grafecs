@@ -8,8 +8,7 @@ use std::ops::Mul;
 
 
 //when Float is updated, make sure to update the below three lines as well
-type Float = f32;
-const DEGREE_TO_RADIAN: Float = std::f32::consts::PI / 180.0;
+pub type Float = f32;
 
 ///The point is stored (x, y, z)
 type Point = (Float, Float, Float);
@@ -61,6 +60,11 @@ impl Fatrix {
         self.add_point(q);
     }
 
+    pub fn apply(&mut self, transform: &Modtrix) {
+        let new_mat = transform * self;
+        self.store = new_mat.store;
+    }
+
     pub fn screen<T: Color>(&self, color: T, width: usize, height: usize) -> Screen<T> {
         self.store
             .windows(2)
@@ -103,7 +107,26 @@ impl Modtrix {
             [0.0, 0.0, 0.0, 1.0],
         ],
     };
+    pub fn ident(&mut self) {
+        self.store = Self::IDENT.store.clone();
+    }
+    pub fn mult(lhs: &Modtrix, rhs: &mut Modtrix) {
+        //make sure the multiplication is actually defined, else panic
+        //Note that the modtrix length is 4
+        //FIXME: currently doesn't work
+        let mut res = [[0.0; 4]; 4];
+        for i in 0..4 {
+            for j in 0..4 {
+                for k in 0..4 {
+                    res[i][j] += lhs.store[i][k] * rhs.store[k][j];
+                }
+            }
+        }
+        rhs.store = res;
+    }
 }
+
+
 
 impl From<[[Float; 4]; 4]> for Modtrix {
     fn from(store: [[Float; 4]; 4]) -> Self {
@@ -115,13 +138,13 @@ impl From<[[Float; 4]; 4]> for Modtrix {
 
 ///creates translation matrix with given x, y, z values to transform by
 #[macro_export]
-macro_rules! trans_matrix {
+macro_rules! move_matrix {
     ( $x:expr, $y:expr, $z:expr ) => {
         Modtrix::from([
-            [1, 0, 0, $x],
-            [0, 1, 0, $y],
-            [0, 0, 1, $z],
-            [0, 0, 0, 1],
+            [1.0, 0.0, 0.0, $x],
+            [0.0, 1.0, 0.0, $y],
+            [0.0, 0.0, 1.0, $z],
+            [0.0, 0.0, 0.0, 1.0],
         ])
     };
 }
@@ -131,10 +154,10 @@ macro_rules! trans_matrix {
 macro_rules! scale_matrix {
     ( $x:expr, $y:expr, $z:expr ) => {
         Modtrix::from([
-            [$x, 0, 0, 0],
-            [0, $y, 0, 0],
-            [0, 0, $z, 0],
-            [0, 0, 0, 1],
+            [$x, 0.0, 0.0, 0.0],
+            [0.0, $y, 0.0, 0.0],
+            [0.0, 0.0, $z, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
         ])
     };
 }
@@ -145,14 +168,15 @@ macro_rules! scale_matrix {
 macro_rules! rotz_matrix {
     ( $t:expr ) => {
         {
-            let d = DEGREE_TO_RADIAN * t;
+            //the long number is a degree to radian conversion
+            let d = 0.0174532925199432957692369076848861271344287188854172545609719144 * $t;
             let sd = d.sin();
             let cd = d.cos();
             Modtrix::from([
-                [cd, -sd, 0, 0],
-                [sd, cd, 0, 0],
-                [0, 0, 1, 0],
-                [0, 0, 0, 1],
+                [cd, -sd, 0.0, 0.0],
+                [sd, cd, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
             ])
         }
     };
@@ -164,14 +188,15 @@ macro_rules! rotz_matrix {
 macro_rules! rotx_matrix {
     ( $t:expr ) => {
         {
-            let d = DEGREE_TO_RADIAN * t;
+            //the long number is a degree to radian conversion
+            let d = 0.0174532925199432957692369076848861271344287188854172545609719144 * $t;
             let sd = d.sin();
             let cd = d.cos();
             Modtrix::from([
-                [1, 0, 0, 0],
-                [0, cd, -sd, 0],
-                [0, sd, cd, 0],
-                [0, 0, 0, 1],
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, cd, -sd, 0.0],
+                [0.0, sd, cd, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
             ])
         }
     };
@@ -183,20 +208,21 @@ macro_rules! rotx_matrix {
 macro_rules! roty_matrix {
     ( $t:expr ) => {
         {
-            let d = DEGREE_TO_RADIAN * t;
+            //the long number is a degree to radian conversion
+            let d = 0.0174532925199432957692369076848861271344287188854172545609719144 * $t;
             let sd = d.sin();
             let cd = d.cos();
             Modtrix::from([
-                [cd, 0, sd, 0],
-                [0, 1, 0, 0],
-                [-sd, 0, cd, 0],
-                [0, 0, 0, 1],
+                [cd, 0.0, sd, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [-sd, 0.0, cd, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
             ])
         }
     };
 }
 
-impl Mul<Fatrix> for Modtrix {
+impl Mul<&Fatrix> for &Modtrix {
     type Output = Fatrix;
 
     ///Multiply a Modtrix to a Fatrix. Really this can be thought of as applying some modifier to
@@ -204,14 +230,14 @@ impl Mul<Fatrix> for Modtrix {
     ///but that's ok, we didn't want to use that thing again anyway!
     //TODO: Make this just modify the original Fatrix and maybe move to that struct as just a
     //.mul() function or somehthing
-    fn mul(self, rhs: Fatrix) -> Self::Output {
+    fn mul(self, rhs: &Fatrix) -> Self::Output {
         //make sure the multiplication is actually defined, else panic
         //pretty ugly, but it should get the job done.
         Fatrix {
             store: rhs
                 .store
-                .into_iter()
-                .map(|v| {
+                .iter()
+                .map(|&v| {
                     [
                         v[0] * self.store[0][0]
                             + v[1] * self.store[0][1]
