@@ -5,22 +5,22 @@
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 #![allow(elided_lifetimes_in_paths)]
 
+use std::env;
 use std::error::Error;
 use std::fs::{self, File};
 use std::path::PathBuf;
-use std::env;
 use std::process::{self, Command};
 
+use dwscript_y::Expr;
 use lrlex::{lrlex_mod, DefaultLexeme};
 use lrpar::{lrpar_mod, NonStreamingLexer, Span};
-use dwscript_y::Expr;
 
 mod draw;
 mod fatrix;
 mod screen;
 
+use fatrix::{Fatrix, Float, Modtrix};
 use screen::color::RGB8Color;
-use fatrix::{Fatrix, Modtrix, Float};
 
 const FILE_NAME: &str = "graphics_out";
 const IMAGE_WIDTH: usize = 500;
@@ -32,66 +32,73 @@ lrpar_mod!("dwscript.y");
 ///Evaluates the AST built by the parser
 //FIXME: fix filename clashing
 fn eval<'a>(
-    lexer: &'a dyn NonStreamingLexer<DefaultLexeme, u32>, 
-    e: Expr, 
-    trans: &mut Modtrix, 
-    edges: &mut Fatrix
+    lexer: &'a dyn NonStreamingLexer<DefaultLexeme, u32>,
+    e: Expr,
+    trans: &mut Modtrix,
+    edges: &mut Fatrix,
 ) -> Result<&'a str, (Span, &'static str)> {
     match e {
-        Expr::Expr { span: _span, lhs, rhs } => {
+        Expr::Expr {
+            span: _span,
+            lhs,
+            rhs,
+        } => {
             eval(lexer, *lhs, trans, edges)?;
             eval(lexer, *rhs, trans, edges)?;
             Ok("")
-        },
+        }
         Expr::Command { span: _span, fun } => {
             eval(lexer, *fun, trans, edges)?;
             Ok("")
-        },
+        }
         Expr::Function { span: _span, typ } => {
             eval(lexer, *typ, trans, edges)?;
             Ok("")
-        },
+        }
         Expr::Line { span, args } => {
             let nums = args
                 .into_iter()
-                .map(|x| eval(lexer, *x, trans, edges)?
-                     .parse()
-                     .map_err(|_| (span, "input not a number"))
-                )
+                .map(|x| {
+                    eval(lexer, *x, trans, edges)?
+                        .parse()
+                        .map_err(|_| (span, "input not a number"))
+                })
                 .collect::<Vec<Result<_, _>>>();
             let p1 = (nums[0]?, nums[1]?, nums[2]?);
             let p2 = (nums[3]?, nums[4]?, nums[5]?);
             edges.add_edge(p1, p2);
             Ok("")
-        },
+        }
         Expr::Ident { span: _span } => {
             trans.ident();
             Ok("")
-        },
+        }
         Expr::Scale { span, args } => {
             let nums = args
                 .into_iter()
-                .map(|x| eval(lexer, *x, trans, edges)?
-                     .parse()
-                     .map_err(|_| (span, "input not a number"))
-                )
+                .map(|x| {
+                    eval(lexer, *x, trans, edges)?
+                        .parse()
+                        .map_err(|_| (span, "input not a number"))
+                })
                 .collect::<Vec<Result<_, _>>>();
             let sm = scale_matrix!(nums[0]?, nums[1]?, nums[2]?);
             Modtrix::mult(&sm, trans);
             Ok("")
-        },
+        }
         Expr::Move { span, args } => {
             let nums = args
                 .into_iter()
-                .map(|x| eval(lexer, *x, trans, edges)?
-                     .parse()
-                     .map_err(|_| (span, "input not a number"))
-                )
+                .map(|x| {
+                    eval(lexer, *x, trans, edges)?
+                        .parse()
+                        .map_err(|_| (span, "input not a number"))
+                })
                 .collect::<Vec<Result<_, _>>>();
             let mm = move_matrix!(nums[0]?, nums[1]?, nums[2]?);
             Modtrix::mult(&mm, trans);
             Ok("")
-        },
+        }
         Expr::Rotate { span, axis, deg } => {
             let a = eval(lexer, *axis, trans, edges)?;
             let t = eval(lexer, *deg, trans, edges)?
@@ -105,53 +112,47 @@ fn eval<'a>(
             };
             Modtrix::mult(&rm, trans);
             Ok("")
-        },
+        }
         Expr::Apply { span: _span } => {
             edges.apply(trans);
             Ok("")
-        },
+        }
         Expr::Display { span } => {
             let file_ppm = format!(".tmp_displayfilelhfgfhgf{}.ppm", FILE_NAME);
             let path = PathBuf::from(&file_ppm);
             let mut file = File::create(&path).map_err(|_| (span, "failed create file path"))?;
             let scrn = edges.screen::<RGB8Color>((255, 255, 255).into(), IMAGE_WIDTH, IMAGE_HEIGHT);
-            scrn.write_binary_ppm(&mut file).map_err(|_| (span, "failed to write ppm file"))?;
+            scrn.write_binary_ppm(&mut file)
+                .map_err(|_| (span, "failed to write ppm file"))?;
             //requires imagemagick
             Command::new("display")
                 .arg(&file_ppm)
                 .status()
                 .map_err(|_| (span, "failed to display file"))?;
 
-            fs::remove_file(&file_ppm)
-                .map_err(|_| (span, "couldn't remove tmp file"))?;
+            fs::remove_file(&file_ppm).map_err(|_| (span, "couldn't remove tmp file"))?;
             Ok("")
-        },
+        }
         Expr::Save { span, file } => {
             let file_name = eval(lexer, *file, trans, edges)?;
             let file_ppm = format!(".tmp_convertfilelhfgfhgf{}.ppm", file_name);
             let path = PathBuf::from(&file_ppm);
             let mut file = File::create(&path).map_err(|_| (span, "failed create file path"))?;
             let scrn = edges.screen::<RGB8Color>((255, 255, 255).into(), IMAGE_WIDTH, IMAGE_HEIGHT);
-            scrn.write_binary_ppm(&mut file).map_err(|_| (span, "failed to write ppm file"))?;
+            scrn.write_binary_ppm(&mut file)
+                .map_err(|_| (span, "failed to write ppm file"))?;
             //requires imagemgick
             Command::new("convert")
                 .arg(&file_ppm)
                 .arg(&file_name)
                 .status()
                 .map_err(|_| (span, "failed to convert file to png"))?;
-            fs::remove_file(&file_ppm)
-                .map_err(|_| (span, "couldn't remove tmp file"))?;
+            fs::remove_file(&file_ppm).map_err(|_| (span, "couldn't remove tmp file"))?;
             Ok("")
-        },
-        Expr::Num { span } => {
-            Ok(lexer.span_str(span))
-        },
-        Expr::Axis { span } => {
-            Ok(lexer.span_str(span))
-        },
-        Expr::File { span } => {
-            Ok(lexer.span_str(span))
-        },
+        }
+        Expr::Num { span } => Ok(lexer.span_str(span)),
+        Expr::Axis { span } => Ok(lexer.span_str(span)),
+        Expr::File { span } => Ok(lexer.span_str(span)),
     }
 }
 
@@ -171,12 +172,13 @@ fn run() -> Result<(), Box<dyn Error>> {
         let mut edges = Fatrix::new();
         if let Err((span, msg)) = eval(&lexer, r, &mut trans, &mut edges) {
             let ((line, col), _) = lexer.line_col(span);
-            eprintln!("Error parsing scriptat line {} column {}, '{}' {}.",
-                      line,
-                      col,
-                      lexer.span_str(span),
-                      msg,
-                      );
+            eprintln!(
+                "Error parsing scriptat line {} column {}, '{}' {}.",
+                line,
+                col,
+                lexer.span_str(span),
+                msg,
+            );
         }
     }
     Ok(())

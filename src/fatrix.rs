@@ -6,7 +6,6 @@ use crate::screen::{color::Color, Screen};
 use std::fmt::{self, Debug};
 use std::ops::Mul;
 
-
 //when Float is updated, make sure to update the below three lines as well
 pub type Float = f32;
 
@@ -66,15 +65,15 @@ impl Fatrix {
     }
 
     pub fn screen<T: Color>(&self, color: T, width: usize, height: usize) -> Screen<T> {
-        self.store
-            .windows(2)
-            .step_by(2)
-            .fold(Screen::<T>::with_size(width, height), |mut acc, w| {
+        self.store.windows(2).step_by(2).fold(
+            Screen::<T>::with_size(width, height),
+            |mut acc, w| {
                 let p1 = (w[0][0] as i32, w[0][1] as i32);
                 let p2 = (w[1][0] as i32, w[1][1] as i32);
                 acc.draw_line(p1, p2, color);
                 acc
-            })
+            },
+        )
     }
 }
 
@@ -126,13 +125,9 @@ impl Modtrix {
     }
 }
 
-
-
 impl From<[[Float; 4]; 4]> for Modtrix {
     fn from(store: [[Float; 4]; 4]) -> Self {
-        Self {
-            store,
-        }
+        Self { store }
     }
 }
 
@@ -166,60 +161,54 @@ macro_rules! scale_matrix {
 ///counter clockwise
 #[macro_export]
 macro_rules! rotz_matrix {
-    ( $t:expr ) => {
-        {
-            //the long number is a degree to radian conversion
-            let d = 0.0174532925199432957692369076848861271344287188854172545609719144 * $t;
-            let sd = d.sin();
-            let cd = d.cos();
-            Modtrix::from([
-                [cd, -sd, 0.0, 0.0],
-                [sd, cd, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ])
-        }
-    };
+    ( $t:expr ) => {{
+        //the long number is a degree to radian conversion
+        let d = 0.0174532925199432957692369076848861271344287188854172545609719144 * $t;
+        let sd = d.sin();
+        let cd = d.cos();
+        Modtrix::from([
+            [cd, -sd, 0.0, 0.0],
+            [sd, cd, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ])
+    }};
 }
 
 ///creates rotation matrix around the x axis given given an angle of rotation in degrees rotating
 ///counter clockwise
 #[macro_export]
 macro_rules! rotx_matrix {
-    ( $t:expr ) => {
-        {
-            //the long number is a degree to radian conversion
-            let d = 0.0174532925199432957692369076848861271344287188854172545609719144 * $t;
-            let sd = d.sin();
-            let cd = d.cos();
-            Modtrix::from([
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, cd, -sd, 0.0],
-                [0.0, sd, cd, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ])
-        }
-    };
+    ( $t:expr ) => {{
+        //the long number is a degree to radian conversion
+        let d = 0.0174532925199432957692369076848861271344287188854172545609719144 * $t;
+        let sd = d.sin();
+        let cd = d.cos();
+        Modtrix::from([
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, cd, -sd, 0.0],
+            [0.0, sd, cd, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ])
+    }};
 }
 
 ///creates rotation matrix around the y axis given given an angle of rotation in degrees rotating
 ///counter clockwise
 #[macro_export]
 macro_rules! roty_matrix {
-    ( $t:expr ) => {
-        {
-            //the long number is a degree to radian conversion
-            let d = 0.0174532925199432957692369076848861271344287188854172545609719144 * $t;
-            let sd = d.sin();
-            let cd = d.cos();
-            Modtrix::from([
-                [cd, 0.0, sd, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [-sd, 0.0, cd, 0.0],
-                [0.0, 0.0, 0.0, 1.0],
-            ])
-        }
-    };
+    ( $t:expr ) => {{
+        //the long number is a degree to radian conversion
+        let d = 0.0174532925199432957692369076848861271344287188854172545609719144 * $t;
+        let sd = d.sin();
+        let cd = d.cos();
+        Modtrix::from([
+            [cd, 0.0, sd, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [-sd, 0.0, cd, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ])
+    }};
 }
 
 impl Mul<&Fatrix> for &Modtrix {

@@ -43,7 +43,6 @@ impl<T: Color> IndexMut<[usize; 2]> for Screen<T> {
 }
 
 impl<T: Color> Screen<T> {
-
     pub fn with_size(width: usize, height: usize) -> Screen<T> {
         Screen {
             grid: vec![vec![T::default(); width]; height],
