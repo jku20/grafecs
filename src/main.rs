@@ -1,6 +1,36 @@
 //!This is my graphics class project.
 //!It's done in rust so maybe I will learn something by the end.
 //!Not meant to be useful but hopefully interesting in at least some way.
+//!
+//!The ues of this project is an interpreter for a language I lovingly call DWscript. The files
+//!will have the extension `.dw`. 
+//!
+//!The interpreter stores a transformation matrix and edge matrix which are updated via commands in
+//!the script file. The commands are the format:
+//!```
+//!command
+//!arg1 arg2 arg3...
+//!command
+//!arg1 arg2 arg3...
+//!...
+//!```
+//!The commands are
+//!`line`: add a line to the point matrix - takes 6 arguemnts (x0, y0, z0, x1, y1, z1)
+//!
+//!`ident`: set the transform matrix to the identity matrix
+//!
+//!`scale`: create a scale matrix, then multiply the transform matrix by the scale matrix - takes 3 arguments (sx, sy, sz)
+//!
+//!`move`: create a translation matrix, then multiply the transform matrix by the translation matrix - takes 3 arguments (tx, ty, tz)
+//!
+//!`rotate`: create a rotation matrix, then multiply the transform matrix by the rotation matrix - takes 2 arguments (axis theta)
+//!
+//!`apply`: apply the current transformation matrix to the edge matrix
+//!
+//!`display`: clear the screen, draw the lines of the point matrix to the screen, display the screen
+//!
+//!`save`: clear the screen, draw the lines of the point matrix to the screen/frame save the screen/frame to a file - takes 1 argument (file name)
+
 
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 #![allow(elided_lifetimes_in_paths)]
@@ -22,7 +52,7 @@ mod screen;
 use fatrix::{Fatrix, Float, Modtrix};
 use screen::color::RGB8Color;
 
-const FILE_NAME: &str = "graphics_out";
+const TMP_FILE_NAME: &str = "graphics_out";
 const IMAGE_WIDTH: usize = 500;
 const IMAGE_HEIGHT: usize = 500;
 
@@ -118,7 +148,7 @@ fn eval<'a>(
             Ok("")
         }
         Expr::Display { span } => {
-            let file_ppm = format!(".tmp_displayfilelhfgfhgf{}.ppm", FILE_NAME);
+            let file_ppm = format!(".tmp_displayfilelhfgfhgf{}.ppm", TMP_FILE_NAME);
             let path = PathBuf::from(&file_ppm);
             let mut file = File::create(&path).map_err(|_| (span, "failed create file path"))?;
             let scrn = edges.screen::<RGB8Color>((255, 255, 255).into(), IMAGE_WIDTH, IMAGE_HEIGHT);
