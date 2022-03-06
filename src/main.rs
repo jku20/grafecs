@@ -38,16 +38,16 @@ fn eval<'a>(
     edges: &mut Fatrix
 ) -> Result<&'a str, (Span, &'static str)> {
     match e {
-        Expr::Expr { span, lhs, rhs } => {
+        Expr::Expr { span: _span, lhs, rhs } => {
             eval(lexer, *lhs, trans, edges)?;
             eval(lexer, *rhs, trans, edges)?;
             Ok("")
         },
-        Expr::Command { span, fun } => {
+        Expr::Command { span: _span, fun } => {
             eval(lexer, *fun, trans, edges)?;
             Ok("")
         },
-        Expr::Function { span, typ } => {
+        Expr::Function { span: _span, typ } => {
             eval(lexer, *typ, trans, edges)?;
             Ok("")
         },
@@ -64,7 +64,7 @@ fn eval<'a>(
             edges.add_edge(p1, p2);
             Ok("")
         },
-        Expr::Ident { span } => {
+        Expr::Ident { span: _span } => {
             trans.ident();
             Ok("")
         },
@@ -106,7 +106,7 @@ fn eval<'a>(
             Modtrix::mult(&rm, trans);
             Ok("")
         },
-        Expr::Apply { span } => {
+        Expr::Apply { span: _span } => {
             edges.apply(trans);
             Ok("")
         },
@@ -169,30 +169,17 @@ fn run() -> Result<(), Box<dyn Error>> {
     if let Some(Ok(r)) = res {
         let mut trans = Modtrix::IDENT.clone();
         let mut edges = Fatrix::new();
-        match eval(&lexer, r, &mut trans, &mut edges) {
-            Ok(_) => eprintln!("script ran"),
-            Err((span, msg)) => {
-                let ((line, col), _) = lexer.line_col(span);
-                eprintln!("Error parsing scriptat line {} column {}, '{}' {}.",
-                          line,
-                          col,
-                          lexer.span_str(span),
-                          msg,
-                          );
-            }
+        if let Err((span, msg)) = eval(&lexer, r, &mut trans, &mut edges) {
+            let ((line, col), _) = lexer.line_col(span);
+            eprintln!("Error parsing scriptat line {} column {}, '{}' {}.",
+                      line,
+                      col,
+                      lexer.span_str(span),
+                      msg,
+                      );
         }
     }
     Ok(())
-    /*
-
-    let file_ppm = format!("{}.ppm", FILE_NAME);
-    let path = PathBuf::from(&file_ppm);
-    //the program just puts the file wherever it was run from because why not...
-    //clean it up yourself, I'm too lazy
-    let mut file = File::create(&path)?;
-    scrn.write_binary_ppm(&mut file)?;
-    Ok(())
-    */
 }
 
 fn main() -> Result<(), Box<dyn Error>> {

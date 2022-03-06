@@ -81,6 +81,10 @@ Axis -> Result<Expr, ()>:
 File -> Result<Expr, ()>:
     'FILE' { Ok( Expr::File { span: $span } ) }
     ;
+
+Unmatched -> ():
+    'UNMATCHED' { }
+    ;
 %%
 
 use lrpar::Span;
