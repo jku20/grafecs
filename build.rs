@@ -2,6 +2,7 @@ use cfgrammar::yacc::YaccKind;
 use lrlex::CTLexerBuilder;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("cargo:rerun-if-changed=src/");
     CTLexerBuilder::new()
         .lrpar_config(|ctp| {
             ctp.yacckind(YaccKind::Grmtools)
