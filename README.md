@@ -7,5 +7,5 @@ This a super simple graphics engine written in rust for a school course.
 
 The below will probably generate an image file wherever you ran it from with hopefuly something cool on it.
 ```sh
-cargo run --release
+cargo run --release script_written_in_dwscript
 ```

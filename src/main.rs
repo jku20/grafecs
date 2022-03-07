@@ -15,6 +15,7 @@
 //!...
 //!```
 //!The commands are
+//!
 //!`line`: add a line to the point matrix - takes 6 arguemnts (x0, y0, z0, x1, y1, z1)
 //!
 //!`ident`: set the transform matrix to the identity matrix
