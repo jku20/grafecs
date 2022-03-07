@@ -189,7 +189,7 @@ fn eval<'a>(
 
 fn run() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
-    let script = fs::read_to_string(&args[1])?;
+    let script = fs::read_to_string(&args.get(1).ok_or("No Input File Given")?)?;
 
     let lexerdef = dwscript_l::lexerdef();
     let lexer = lexerdef.lexer(script.trim());
