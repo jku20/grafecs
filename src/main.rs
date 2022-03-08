@@ -71,11 +71,11 @@ fn eval<'a>(
     match e {
         Expr::Expr {
             span: _span,
-            lhs,
-            rhs,
+            cmds,
         } => {
-            eval(lexer, *lhs, trans, edges)?;
-            eval(lexer, *rhs, trans, edges)?;
+            for c in cmds {
+                eval(lexer, *c, trans, edges)?;
+            }
             Ok("")
         }
         Expr::Command { span: _span, fun } => {

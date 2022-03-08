@@ -1,11 +1,18 @@
 %start Expr
 %%
 Expr -> Result<Expr, ()>:
-    Command 'SPACE' Expr
+    Expr 'SPACE' Command
     { 
-        Ok( Expr::Expr { span: $span, lhs: Box::new($1?), rhs: Box::new($3?) } )
+        match $1? {
+            Expr::Expr { span, mut cmds } => {
+                cmds.push(Box::new($3?));
+                Ok( Expr::Expr { span, cmds } )
+            }
+            //if we get here bad bad very bad
+            _ => Err(())
+        }
     }
-    | Command { $1 }
+    | Command { Ok( Expr::Expr { span: $span, cmds: vec![Box::new($1?)] } ) }
     ;
 
 Command -> Result<Expr, ()>:
@@ -94,8 +101,7 @@ use lrpar::Span;
 pub enum Expr {
     Expr {
         span: Span,
-        lhs: Box<Expr>,
-        rhs: Box<Expr>,
+        cmds: Vec<Box<Expr>>,
     },
     Command {
         span: Span,
