@@ -5,14 +5,14 @@ Expr -> Result<Expr, ()>:
     { 
         match $1? {
             Expr::Expr { span, mut cmds } => {
-                cmds.push(Box::new($3?));
+                cmds.push($3?);
                 Ok( Expr::Expr { span, cmds } )
             }
             //if we get here bad bad very bad
             _ => Err(())
         }
     }
-    | Command { Ok( Expr::Expr { span: $span, cmds: vec![Box::new($1?)] } ) }
+    | Command { Ok( Expr::Expr { span: $span, cmds: vec![$1?] } ) }
     ;
 
 Command -> Result<Expr, ()>:
@@ -101,7 +101,7 @@ use lrpar::Span;
 pub enum Expr {
     Expr {
         span: Span,
-        cmds: Vec<Box<Expr>>,
+        cmds: Vec<Expr>,
     },
     Command {
         span: Span,

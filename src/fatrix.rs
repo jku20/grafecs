@@ -32,6 +32,12 @@ impl Debug for Fatrix {
     }
 }
 
+impl Default for Fatrix {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Fatrix {
     ///Creates a Fatrix with a certain amount of columns
     pub fn with_size(columns: usize) -> Fatrix {
@@ -107,17 +113,17 @@ impl Modtrix {
         ],
     };
     pub fn ident(&mut self) {
-        self.store = Self::IDENT.store.clone();
+        self.store = Self::IDENT.store;
     }
     pub fn mult(lhs: &Modtrix, rhs: &mut Modtrix) {
         //make sure the multiplication is actually defined, else panic
         //Note that the modtrix length is 4
         //FIXME: currently doesn't work
         let mut res = [[0.0; 4]; 4];
-        for i in 0..4 {
-            for j in 0..4 {
+        for (i, row) in res.iter_mut().enumerate() {
+            for (j, num) in row.iter_mut().enumerate() {
                 for k in 0..4 {
-                    res[i][j] += lhs.store[i][k] * rhs.store[k][j];
+                    *num += lhs.store[i][k] * rhs.store[k][j];
                 }
             }
         }
@@ -163,7 +169,7 @@ macro_rules! scale_matrix {
 macro_rules! rotz_matrix {
     ( $t:expr ) => {{
         //the long number is a degree to radian conversion
-        let d = 0.0174532925199432957692369076848861271344287188854172545609719144 * $t;
+        let d = $t * 0.017_453_292;//5199432957692369076848861271344287188854172545609719144;
         let sd = d.sin();
         let cd = d.cos();
         Modtrix::from([
@@ -181,7 +187,7 @@ macro_rules! rotz_matrix {
 macro_rules! rotx_matrix {
     ( $t:expr ) => {{
         //the long number is a degree to radian conversion
-        let d = 0.0174532925199432957692369076848861271344287188854172545609719144 * $t;
+        let d = $t * 0.017_453_292;//5199432957692369076848861271344287188854172545609719144;
         let sd = d.sin();
         let cd = d.cos();
         Modtrix::from([
@@ -199,7 +205,7 @@ macro_rules! rotx_matrix {
 macro_rules! roty_matrix {
     ( $t:expr ) => {{
         //the long number is a degree to radian conversion
-        let d = 0.0174532925199432957692369076848861271344287188854172545609719144 * $t;
+        let d = $t * 0.017_453_292;//5199432957692369076848861271344287188854172545609719144;
         let sd = d.sin();
         let cd = d.cos();
         Modtrix::from([

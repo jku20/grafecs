@@ -74,7 +74,7 @@ fn eval<'a>(
             cmds,
         } => {
             for c in cmds {
-                eval(lexer, *c, trans, edges)?;
+                eval(lexer, c, trans, edges)?;
             }
             Ok("")
         }
