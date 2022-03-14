@@ -181,6 +181,76 @@ fn eval<'a>(
             fs::remove_file(&file_ppm).map_err(|_| (span, "couldn't remove tmp file"))?;
             Ok("")
         }
+        Expr::Circle { span, cx, cy, cz, r } => {
+            let cx = eval(lexer, *cx, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let cy = eval(lexer, *cy, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let cz = eval(lexer, *cz, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let r = eval(lexer, *r, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            println!("{} {} {} {}", cx, cy, cz, r);
+            Ok("")
+        }
+        Expr::Hermite { span, x0, y0, x1, y1, rx0, ry0, rx1, ry1 } => {
+            let x0 = eval(lexer, *x0, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let y0 = eval(lexer, *y0, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let x1 = eval(lexer, *x1, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let y1 = eval(lexer, *y1, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let rx0 = eval(lexer, *rx0, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let ry0 = eval(lexer, *ry0, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let rx1 = eval(lexer, *rx1, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let ry1 = eval(lexer, *ry1, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            Ok("")
+        }
+        Expr::Bezier { span, x0, y0, x1, y1, x2, y2, x3, y3 } => {
+            let x0 = eval(lexer, *x0, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let y0 = eval(lexer, *y0, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let x1 = eval(lexer, *x1, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let y1 = eval(lexer, *y1, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let x2 = eval(lexer, *x2, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let y2 = eval(lexer, *y2, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let x3 = eval(lexer, *x3, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            let y3 = eval(lexer, *y3, trans, edges)?
+                .parse::<Float>()
+                .map_err(|_| (span, "cannot parse num"))?;
+            Ok("")
+        }
         Expr::Num { span } => Ok(lexer.span_str(span)),
         Expr::Axis { span } => Ok(lexer.span_str(span)),
         Expr::File { span } => Ok(lexer.span_str(span)),
