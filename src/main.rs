@@ -69,10 +69,7 @@ fn eval<'a>(
     edges: &mut Fatrix,
 ) -> Result<&'a str, (Span, &'static str)> {
     match e {
-        Expr::Expr {
-            span: _span,
-            cmds,
-        } => {
+        Expr::Expr { span: _span, cmds } => {
             for c in cmds {
                 eval(lexer, c, trans, edges)?;
             }
@@ -194,7 +191,7 @@ fn eval<'a>(
             let r = eval(lexer, *r, trans, edges)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            println!("{} {} {} {}", cx, cy, cz, r);
+            draw::add_circle(cx, cy, cz, r, edges);
             Ok("")
         }
         Expr::Hermite { span, x0, y0, x1, y1, rx0, ry0, rx1, ry1 } => {
@@ -222,6 +219,7 @@ fn eval<'a>(
             let ry1 = eval(lexer, *ry1, trans, edges)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
+            draw::add_hermite(x0, y0, x1, y1, rx0, ry0, rx1, ry1, edges);
             Ok("")
         }
         Expr::Bezier { span, x0, y0, x1, y1, x2, y2, x3, y3 } => {
@@ -249,6 +247,7 @@ fn eval<'a>(
             let y3 = eval(lexer, *y3, trans, edges)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
+            draw::add_bezier(x0, y0, x1, y1, x2, y2, x3, y3, edges);
             Ok("")
         }
         Expr::Num { span } => Ok(lexer.span_str(span)),

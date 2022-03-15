@@ -168,8 +168,7 @@ macro_rules! scale_matrix {
 #[macro_export]
 macro_rules! rotz_matrix {
     ( $t:expr ) => {{
-        //the long number is a degree to radian conversion
-        let d = $t * 0.017_453_292;//5199432957692369076848861271344287188854172545609719144;
+        let d = $t.to_radians();
         let sd = d.sin();
         let cd = d.cos();
         Modtrix::from([
@@ -186,8 +185,7 @@ macro_rules! rotz_matrix {
 #[macro_export]
 macro_rules! rotx_matrix {
     ( $t:expr ) => {{
-        //the long number is a degree to radian conversion
-        let d = $t * 0.017_453_292;//5199432957692369076848861271344287188854172545609719144;
+        let d = $t.to_radians();
         let sd = d.sin();
         let cd = d.cos();
         Modtrix::from([
@@ -204,8 +202,7 @@ macro_rules! rotx_matrix {
 #[macro_export]
 macro_rules! roty_matrix {
     ( $t:expr ) => {{
-        //the long number is a degree to radian conversion
-        let d = $t * 0.017_453_292;//5199432957692369076848861271344287188854172545609719144;
+        let d = $t.to_radians();
         let sd = d.sin();
         let cd = d.cos();
         Modtrix::from([

@@ -23,14 +23,14 @@ Function -> Result<Expr, ()>:
     Line { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     | Ident { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     | Scale { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
-    | Move { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
-    | Rotate { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
+    | Move { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) } | Rotate { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     | Apply { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     | Display { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     | Save { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     | Circle { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     | Hermite { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     | Bezier { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
+    | Comment { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     ;
 
 Line -> Result<Expr, ()>:
@@ -135,6 +135,10 @@ File -> Result<Expr, ()>:
     'FILE' { Ok( Expr::File { span: $span } ) }
     ;
 
+Comment -> Result<Expr, ()>:
+    'COMMENT' { Ok( Expr::Expr { span: $span, cmds: Vec::new() } ) }
+    ;
+
 Unmatched -> ():
     'UNMATCHED' { }
     ;
@@ -142,6 +146,7 @@ Unmatched -> ():
 
 use lrpar::Span;
 
+//FIXME: COMMENTS ONLY WORK FOR REGULARISH STRINGS
 ///enum specifying all the commands
 #[derive(Debug)]
 pub enum Expr {
