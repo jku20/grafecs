@@ -250,6 +250,47 @@ fn eval<'a>(
             draw::add_bezier(x0, y0, x1, y1, x2, y2, x3, y3, edges);
             Ok("")
         }
+        Expr::Box { span, args } => {
+            let args = args
+                .into_iter()
+                .map(|x| {
+                    eval(lexer, *x, trans, edges)?
+                        .parse()
+                        .map_err(|_| (span, "input not a number"))
+                })
+                .collect::<Vec<Result<_, _>>>();
+            draw::add_box(args[0]?, args[1]?, args[2]?, args[3]?, args[4]?, args[5]?, edges);
+            Ok("")
+        }
+        Expr::Sphere { span, args } => {
+            let args = args
+                .into_iter()
+                .map(|x| {
+                    eval(lexer, *x, trans, edges)?
+                        .parse()
+                        .map_err(|_| (span, "input not a number"))
+                })
+                .collect::<Vec<Result<_, _>>>();
+            draw::add_sphere(args[0]?, args[1]?, args[2]?, args[3]?, edges);
+            Ok("")
+        }
+        Expr::Torus { span, args } => {
+            let args = args
+                .into_iter()
+                .map(|x| {
+                    eval(lexer, *x, trans, edges)?
+                        .parse()
+                        .map_err(|_| (span, "input not a number"))
+                })
+                .collect::<Vec<Result<_, _>>>();
+            draw::add_torus(args[0]?, args[1]?, args[2]?, args[3]?, args[4]?, edges);
+            Ok("")
+        }
+        Expr::Clear { span: _span } => {
+            edges.clear();
+            Ok("")
+        }
+
         Expr::Num { span } => Ok(lexer.span_str(span)),
         Expr::Axis { span } => Ok(lexer.span_str(span)),
         Expr::File { span } => Ok(lexer.span_str(span)),

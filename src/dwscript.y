@@ -31,6 +31,10 @@ Function -> Result<Expr, ()>:
     | Hermite { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     | Bezier { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     | Comment { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
+    | Box { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
+    | Sphere { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
+    | Torus { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
+    | Clear { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     ;
 
 Line -> Result<Expr, ()>:
@@ -121,7 +125,39 @@ Bezier -> Result<Expr, ()>:
     }
     ;
 
+Box -> Result<Expr, ()>:
+    'BOX' 'SPACE' Num 'SPACE' Num 'SPACE' Num 'SPACE' Num 'SPACE' Num 'SPACE' Num 
+    {
+        Ok( Expr::Box { span: $span, args: [
+            Box::new($3?), Box::new($5?), Box::new($7?), Box::new($9?), Box::new($11?), Box::new($13?)
+            ]
+        })
+    }
+    ;
 
+Sphere -> Result<Expr, ()>:
+    'SPHERE' 'SPACE' Num 'SPACE' Num 'SPACE' Num 'SPACE' Num
+    {
+        Ok( Expr::Sphere { span: $span, args: [
+            Box::new($3?), Box::new($5?), Box::new($7?), Box::new($9?)
+            ]
+        })
+    }
+    ;
+
+Torus -> Result<Expr, ()>:
+    'TORUS' 'SPACE' Num 'SPACE' Num 'SPACE' Num 'SPACE' Num 'SPACE' Num
+    {
+        Ok( Expr::Torus { span: $span, args: [
+            Box::new($3?), Box::new($5?), Box::new($7?), Box::new($9?), Box::new($11?)
+            ]
+        })
+    }
+    ;
+
+Clear -> Result<Expr, ()>:
+    'CLEAR' { Ok( Expr::Clear { span: $span } ) }
+    ;
 
 Num -> Result<Expr, ()>:
     'NUM' { Ok( Expr::Num { span: $span } ) }
@@ -220,6 +256,21 @@ pub enum Expr {
         y2: Box<Expr>,
         x3: Box<Expr>,
         y3: Box<Expr>,
+    },
+    Box {
+        span : Span,
+        args: [Box<Expr>; 6],
+    },
+    Sphere {
+        span: Span,
+        args: [Box<Expr>; 4],
+    },
+    Torus {
+        span: Span,
+        args: [Box<Expr>; 5],
+    },
+    Clear {
+        span: Span,
     },
     Num {
         span: Span,

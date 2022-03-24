@@ -10,7 +10,7 @@ use std::ops::Mul;
 pub type Float = f32;
 
 ///The point is stored (x, y, z)
-type Point = (Float, Float, Float);
+pub type Point = (Float, Float, Float);
 
 ///A 4xN matrix. Pretty standard. It has that size limitation because I don't need a
 ///general matrix for anything. The same goes for why this hardcodes the type.
@@ -56,20 +56,29 @@ impl Fatrix {
         self.store.reserve(r);
     }
 
+    ///add a point to the fatrix, helper for add edge, don't use this individually
     fn add_point(&mut self, p: Point) {
         self.store.push([p.0, p.1, p.2, 1.0]);
     }
 
+    ///add an edge to the fatrix
     pub fn add_edge(&mut self, p: Point, q: Point) {
         self.add_point(p);
         self.add_point(q);
     }
 
+    ///apply transformation stored in Modtrix
     pub fn apply(&mut self, transform: &Modtrix) {
         let new_mat = transform * self;
         self.store = new_mat.store;
     }
 
+   ///clear the fatrix
+    pub fn clear(&mut self) {
+        self.store.clear();
+    }
+
+    ///create a screen representing the edges on the current fatrix
     pub fn screen<T: Color>(&self, color: T, width: usize, height: usize) -> Screen<T> {
         self.store.windows(2).step_by(2).fold(
             Screen::<T>::with_size(width, height),
