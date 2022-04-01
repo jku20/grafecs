@@ -4,93 +4,12 @@
 use crate::screen::{color::Color, Screen};
 
 use std::fmt::{self, Debug};
-use std::ops::Mul;
 
 //when Float is updated, make sure to update the below three lines as well
 pub type Float = f32;
 
 ///The point is stored (x, y, z)
 pub type Point = (Float, Float, Float);
-
-///A 4xN matrix. Pretty standard. It has that size limitation because I don't need a
-///general matrix for anything. The same goes for why this hardcodes the type.
-///It is stored transposed because that is easier.
-#[derive(Clone)]
-pub struct Fatrix {
-    store: Vec<[Float; 4]>,
-}
-
-impl Debug for Fatrix {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for i in 0..4 {
-            for v in &self.store {
-                write!(f, "{:?} ", v[i])?;
-            }
-            writeln!(f)?;
-        }
-        Ok(())
-    }
-}
-
-impl Default for Fatrix {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Fatrix {
-    ///Creates a Fatrix with a certain amount of columns
-    pub fn with_size(columns: usize) -> Fatrix {
-        Fatrix {
-            store: vec![[Float::default(); 4]; columns],
-        }
-    }
-
-    ///Creates an empty Fatrix
-    pub fn new() -> Fatrix {
-        Self::with_size(0)
-    }
-
-    ///Reserves a certain amount of space for possibly better performance.
-    pub fn reserve(&mut self, r: usize) {
-        self.store.reserve(r);
-    }
-
-    ///add a point to the fatrix, helper for add edge, don't use this individually
-    fn add_point(&mut self, p: Point) {
-        self.store.push([p.0, p.1, p.2, 1.0]);
-    }
-
-    ///add an edge to the fatrix
-    pub fn add_edge(&mut self, p: Point, q: Point) {
-        self.add_point(p);
-        self.add_point(q);
-    }
-
-    ///apply transformation stored in Modtrix
-    pub fn apply(&mut self, transform: &Modtrix) {
-        let new_mat = transform * self;
-        self.store = new_mat.store;
-    }
-
-   ///clear the fatrix
-    pub fn clear(&mut self) {
-        self.store.clear();
-    }
-
-    ///create a screen representing the edges on the current fatrix
-    pub fn screen<T: Color>(&self, color: T, width: usize, height: usize) -> Screen<T> {
-        self.store.windows(2).step_by(2).fold(
-            Screen::<T>::with_size(width, height),
-            |mut acc, w| {
-                let p1 = (w[0][0] as i32, w[0][1] as i32);
-                let p2 = (w[1][0] as i32, w[1][1] as i32);
-                acc.draw_line(p1, p2, color);
-                acc
-            },
-        )
-    }
-}
 
 ///This is in actuality just a 4x4 matrix, but it is stored a bit differently and has the sole
 ///purpose of being used to modify a Fatrix. Separated from Fatrix as that has a different purpose,
@@ -223,42 +142,85 @@ macro_rules! roty_matrix {
     }};
 }
 
-impl Mul<&Fatrix> for &Modtrix {
-    type Output = Fatrix;
+///A space where you can add lines and triangles
+///you write its stuff to a screen
+#[derive(Clone, Debug)]
+pub struct Space {
+    lin_space: Vec<[Float; 4]>,
+    tri_space: Vec<[Float; 4]>,
+}
 
-    ///Multiply a Modtrix to a Fatrix. Really this can be thought of as applying some modifier to
-    ///the fatrix and getting that new fatrix back. Note that it does consume the previous Fatrix
-    ///but that's ok, we didn't want to use that thing again anyway!
-    //TODO: Make this just modify the original Fatrix and maybe move to that struct as just a
-    //.mul() function or somehthing
-    fn mul(self, rhs: &Fatrix) -> Self::Output {
-        //make sure the multiplication is actually defined, else panic
-        //pretty ugly, but it should get the job done.
-        Fatrix {
-            store: rhs
-                .store
-                .iter()
-                .map(|&v| {
-                    [
-                        v[0] * self.store[0][0]
-                            + v[1] * self.store[0][1]
-                            + v[2] * self.store[0][2]
-                            + v[3] * self.store[0][3],
-                        v[0] * self.store[1][0]
-                            + v[1] * self.store[1][1]
-                            + v[2] * self.store[1][2]
-                            + v[3] * self.store[1][3],
-                        v[0] * self.store[2][0]
-                            + v[1] * self.store[2][1]
-                            + v[2] * self.store[2][2]
-                            + v[3] * self.store[2][3],
-                        v[0] * self.store[3][0]
-                            + v[1] * self.store[3][1]
-                            + v[2] * self.store[3][2]
-                            + v[3] * self.store[3][3],
-                    ]
-                })
-                .collect(),
+impl Space {
+    ///creates a space with a certain starting capacity in both the line and trianlge space
+    ///both of these starting capacities are the same
+    pub fn with_capacity(columns: usize) -> Self {
+        Self {
+            lin_space: Vec::with_capacity(columns),
+            tri_space: Vec::with_capacity(columns),
         }
+    }
+
+    ///creates a Space with zero starting capacity
+    pub fn new() -> Self {
+        Self::with_capacity(0)
+    }
+
+    ///reserves a certain amount of space for future lines and triangles in the Space. 
+    ///This is done in both the line and triangle spaces.
+    pub fn reserve(&mut self, r: usize) {
+        self.lin_space.reserve(r);
+        self.tri_space.reserve(r);
+    }
+
+    ///adds an line to the Space
+    pub fn add_line(&mut self, p: Point, q: Point) {
+        self.lin_space.push([p.0, p.1, p.2, 1.0]);
+        self.lin_space.push([q.0, q.1, q.2, 1.0]);
+    }
+
+    ///apply tranformation stored in a Modtrix
+    pub fn apply(&mut self, transform: &Modtrix) {
+        let mult = |x: &Vec<[Float; 4]>| x.iter()
+            .map(|&v| {
+                [
+                    v[0] * transform.store[0][0]
+                        + v[1] * transform.store[0][1]
+                        + v[2] * transform.store[0][2]
+                        + v[3] * transform.store[0][3],
+                    v[0] * transform.store[1][0]
+                        + v[1] * transform.store[1][1]
+                        + v[2] * transform.store[1][2]
+                        + v[3] * transform.store[1][3],
+                    v[0] * transform.store[2][0]
+                        + v[1] * transform.store[2][1]
+                        + v[2] * transform.store[2][2]
+                        + v[3] * transform.store[2][3],
+                    v[0] * transform.store[3][0]
+                        + v[1] * transform.store[3][1]
+                        + v[2] * transform.store[3][2]
+                        + v[3] * transform.store[3][3],
+                ]
+            })
+            .collect();
+        self.lin_space = mult(&self.lin_space);
+        self.tri_space = mult(&self.tri_space);
+    }
+
+    ///clears all the lines from the current space
+    pub fn clear(&mut self) {
+        self.lin_space.clear();
+        self.tri_space.clear();
+    }
+
+    ///draws the lines currently in the space to a given screen
+    pub fn screen<T: Color>(space: &Space, color: T, s: &mut Screen<T>) {
+        space.lin_space.windows(2).step_by(2).for_each(
+            |w| {
+                let p1 = (w[0][0] as i32, w[0][1] as i32);
+                let p2 = (w[1][0] as i32, w[1][1] as i32);
+                s.draw_line(p1, p2, color);
+            }
+        );
+        //TODO: implement the 3d stuff
     }
 }

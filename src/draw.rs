@@ -1,10 +1,10 @@
-use crate::fatrix::{Float, Point, Fatrix};
+use crate::fatrix::{Float, Point, Space};
 
 const RESOLUTION: u32  = 20;
 
 ///Adds a circle to a given fatrix
 ///circle defined by its center point (cx, cy, cz) and a radius, r
-pub fn add_circle(cx: Float, cy: Float, cz: Float, r: Float, edges: &mut Fatrix) {
+pub fn add_circle(cx: Float, cy: Float, cz: Float, r: Float, edges: &mut Space) {
     for t in 0..RESOLUTION {
         //RESOLUTION should be reasonable enough that these type casts are fine
         let t0 = (t as Float) / (RESOLUTION as Float) * 2.0 * std::f32::consts::PI;
@@ -13,13 +13,13 @@ pub fn add_circle(cx: Float, cy: Float, cz: Float, r: Float, edges: &mut Fatrix)
         let y0 = r * t0.sin() + cy;
         let x1 = r * t1.cos() + cx;
         let y1 = r * t1.sin() + cy;
-        edges.add_edge((x0, y0, cz), (x1, y1, cz));
+        edges.add_line((x0, y0, cz), (x1, y1, cz));
     }
 }
 
 ///Adds a hermite curve defined by a start and end point and slopes coming out of or into those
 ///points
-pub fn add_hermite(x0: Float, y0: Float, x1: Float, y1: Float, rx0: Float, ry0: Float, rx1: Float, ry1: Float, edges: &mut Fatrix) {
+pub fn add_hermite(x0: Float, y0: Float, x1: Float, y1: Float, rx0: Float, ry0: Float, rx1: Float, ry1: Float, edges: &mut Space) {
     let ax = 2.0 * x0 - 2.0 * x1 + rx0 + rx1;
     let bx = -3.0 * x0 + 3.0 * x1 - 2.0 * rx0 - rx1;
     let cx = rx0;
@@ -37,13 +37,13 @@ pub fn add_hermite(x0: Float, y0: Float, x1: Float, y1: Float, rx0: Float, ry0: 
         let py0 = fy(t0);
         let px1 = fx(t1);
         let py1 = fy(t1);
-        edges.add_edge((px0, py0, 0.0), (px1, py1, 0.0));
+        edges.add_line((px0, py0, 0.0), (px1, py1, 0.0));
     }
 }
 
 ///adds bezier curve to fatrix with (x0, y0) and (x3, y3) as start and end points and the other two
 ///points control points
-pub fn add_bezier(x0: Float, y0: Float, x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float, edges: &mut Fatrix) {
+pub fn add_bezier(x0: Float, y0: Float, x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float, edges: &mut Space) {
     let ax = -x0 + 3.0 * x1 - 3.0 * x2 + x3;
     let bx = 3.0 * x0 - 6.0 * x1 + 3.0 * x2;
     let cx = -3.0 * x0 + 3.0 * x1;
@@ -62,29 +62,29 @@ pub fn add_bezier(x0: Float, y0: Float, x1: Float, y1: Float, x2: Float, y2: Flo
         let py0 = fy(t0);
         let px1 = fx(t1);
         let py1 = fy(t1);
-        edges.add_edge((px0, py0, 0.0), (px1, py1, 0.0));
+        edges.add_line((px0, py0, 0.0), (px1, py1, 0.0));
     }
 }
 
 ///adds a box to the given fatrix given the front top left corner x, y, z and a width, height, and
 ///depth
-pub fn add_box(x: Float, y: Float, z: Float, w: Float, h: Float, d: Float, edges: &mut Fatrix) {
-    edges.add_edge((x, y, z), (x+w, y, z));
-    edges.add_edge((x, y, z), (x, y-h, z));
-    edges.add_edge((x, y, z), (x, y, z-d));
+pub fn add_box(x: Float, y: Float, z: Float, w: Float, h: Float, d: Float, edges: &mut Space) {
+    edges.add_line((x, y, z), (x+w, y, z));
+    edges.add_line((x, y, z), (x, y-h, z));
+    edges.add_line((x, y, z), (x, y, z-d));
 
-    edges.add_edge((x+w, y, z), (x+w, y-h, z));
-    edges.add_edge((x+w, y, z), (x+w, y, z-d));
+    edges.add_line((x+w, y, z), (x+w, y-h, z));
+    edges.add_line((x+w, y, z), (x+w, y, z-d));
 
-    edges.add_edge((x, y-h, z), (x+w, y-h, z));
-    edges.add_edge((x, y-h, z), (x, y-h, z-d));
+    edges.add_line((x, y-h, z), (x+w, y-h, z));
+    edges.add_line((x, y-h, z), (x, y-h, z-d));
 
-    edges.add_edge((x, y, z-d), (x+w, y, z-d));
-    edges.add_edge((x, y, z-d), (x, y-h, z-d));
+    edges.add_line((x, y, z-d), (x+w, y, z-d));
+    edges.add_line((x, y, z-d), (x, y-h, z-d));
 
-    edges.add_edge((x+w, y-h, z-d), (x, y-h, z-d));
-    edges.add_edge((x+w, y-h, z-d), (x+w, y, z-d));
-    edges.add_edge((x+w, y-h, z-d), (x+w, y-h, z));
+    edges.add_line((x+w, y-h, z-d), (x, y-h, z-d));
+    edges.add_line((x+w, y-h, z-d), (x+w, y, z-d));
+    edges.add_line((x+w, y-h, z-d), (x+w, y-h, z));
 }
 
 ///returns a vector of the points on the sphere
@@ -107,10 +107,10 @@ fn sphere_points(x: Float, y: Float, z: Float, r: Float) -> Vec<Point> {
 }
 
 ///adds a sphere to a fatrix given a center (x, y, z) and a radius r
-pub fn add_sphere(x: Float, y: Float, z: Float, r: Float, edges: &mut Fatrix) {
+pub fn add_sphere(x: Float, y: Float, z: Float, r: Float, edges: &mut Space) {
     let points = sphere_points(x, y, z, r);
     for p in points {
-        edges.add_edge(p, p);
+        edges.add_line(p, p);
     }
 }
 
@@ -132,9 +132,9 @@ fn torus_points(x: Float, y: Float, z: Float, r1: Float, r2: Float) -> Vec<Point
     out
 }
 
-pub fn add_torus(x: Float, y: Float, z: Float, r1: Float, r2: Float, edges: &mut Fatrix) {
+pub fn add_torus(x: Float, y: Float, z: Float, r1: Float, r2: Float, edges: &mut Space) {
     let points = torus_points(x, y, z, r1, r2);
     for p in points {
-        edges.add_edge(p, p);
+        edges.add_line(p, p);
     }
 }
