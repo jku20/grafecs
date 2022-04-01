@@ -3,7 +3,7 @@
 //!Not meant to be useful but hopefully interesting in at least some way.
 //!
 //!The ues of this project is an interpreter for a language I lovingly call DWscript. The files
-//!will have the extension `.dw`. 
+//!will have the extension `.dw`.
 //!
 //!The interpreter stores a transformation matrix and edge matrix which are updated via commands in
 //!the script file. The commands are the format:
@@ -32,7 +32,6 @@
 //!
 //!`save`: clear the screen, draw the lines of the point matrix to the screen/frame save the screen/frame to a file - takes 1 argument (file name)
 
-
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 #![allow(elided_lifetimes_in_paths)]
 
@@ -50,8 +49,8 @@ mod draw;
 mod fatrix;
 mod screen;
 
-use fatrix::{Space, Float, Modtrix};
-use screen::{Screen, color::RGB8Color};
+use fatrix::{Float, Modtrix, Space};
+use screen::{color::RGB8Color, Screen};
 
 const TMP_FILE_NAME: &str = "graphics_out";
 const IMAGE_WIDTH: usize = 500;
@@ -180,7 +179,13 @@ fn eval<'a>(
             fs::remove_file(&file_ppm).map_err(|_| (span, "couldn't remove tmp file"))?;
             Ok("")
         }
-        Expr::Circle { span, cx, cy, cz, r } => {
+        Expr::Circle {
+            span,
+            cx,
+            cy,
+            cz,
+            r,
+        } => {
             let cx = eval(lexer, *cx, trans, twoson)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
@@ -196,7 +201,17 @@ fn eval<'a>(
             draw::add_circle(cx, cy, cz, r, twoson);
             Ok("")
         }
-        Expr::Hermite { span, x0, y0, x1, y1, rx0, ry0, rx1, ry1 } => {
+        Expr::Hermite {
+            span,
+            x0,
+            y0,
+            x1,
+            y1,
+            rx0,
+            ry0,
+            rx1,
+            ry1,
+        } => {
             let x0 = eval(lexer, *x0, trans, twoson)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
@@ -224,7 +239,17 @@ fn eval<'a>(
             draw::add_hermite(x0, y0, x1, y1, rx0, ry0, rx1, ry1, twoson);
             Ok("")
         }
-        Expr::Bezier { span, x0, y0, x1, y1, x2, y2, x3, y3 } => {
+        Expr::Bezier {
+            span,
+            x0,
+            y0,
+            x1,
+            y1,
+            x2,
+            y2,
+            x3,
+            y3,
+        } => {
             let x0 = eval(lexer, *x0, trans, twoson)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
@@ -261,7 +286,9 @@ fn eval<'a>(
                         .map_err(|_| (span, "input not a number"))
                 })
                 .collect::<Vec<Result<_, _>>>();
-            draw::add_box(args[0]?, args[1]?, args[2]?, args[3]?, args[4]?, args[5]?, twoson);
+            draw::add_box(
+                args[0]?, args[1]?, args[2]?, args[3]?, args[4]?, args[5]?, twoson,
+            );
             Ok("")
         }
         Expr::Sphere { span, args } => {

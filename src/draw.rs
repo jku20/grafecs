@@ -1,6 +1,6 @@
 use crate::fatrix::{Float, Point, Space};
 
-const RESOLUTION: u32  = 20;
+const RESOLUTION: u32 = 20;
 
 ///Adds a circle to a given fatrix
 ///circle defined by its center point (cx, cy, cz) and a radius, r
@@ -8,7 +8,7 @@ pub fn add_circle(cx: Float, cy: Float, cz: Float, r: Float, edges: &mut Space) 
     for t in 0..RESOLUTION {
         //RESOLUTION should be reasonable enough that these type casts are fine
         let t0 = (t as Float) / (RESOLUTION as Float) * 2.0 * std::f32::consts::PI;
-        let t1 = ((t + 1) as Float) / (RESOLUTION as Float)* 2.0 * std::f32::consts::PI;
+        let t1 = ((t + 1) as Float) / (RESOLUTION as Float) * 2.0 * std::f32::consts::PI;
         let x0 = r * t0.cos() + cx;
         let y0 = r * t0.sin() + cy;
         let x1 = r * t1.cos() + cx;
@@ -19,7 +19,17 @@ pub fn add_circle(cx: Float, cy: Float, cz: Float, r: Float, edges: &mut Space) 
 
 ///Adds a hermite curve defined by a start and end point and slopes coming out of or into those
 ///points
-pub fn add_hermite(x0: Float, y0: Float, x1: Float, y1: Float, rx0: Float, ry0: Float, rx1: Float, ry1: Float, edges: &mut Space) {
+pub fn add_hermite(
+    x0: Float,
+    y0: Float,
+    x1: Float,
+    y1: Float,
+    rx0: Float,
+    ry0: Float,
+    rx1: Float,
+    ry1: Float,
+    edges: &mut Space,
+) {
     let ax = 2.0 * x0 - 2.0 * x1 + rx0 + rx1;
     let bx = -3.0 * x0 + 3.0 * x1 - 2.0 * rx0 - rx1;
     let cx = rx0;
@@ -28,8 +38,8 @@ pub fn add_hermite(x0: Float, y0: Float, x1: Float, y1: Float, rx0: Float, ry0: 
     let by = -3.0 * y0 + 3.0 * y1 - 2.0 * ry0 - ry1;
     let cy = ry0;
     let dy = y0;
-    let fx = |x| ax * x * x * x + bx * x * x +  cx * x + dx;
-    let fy = |y| ay * y * y * y + by * y * y +  cy * y + dy;
+    let fx = |x| ax * x * x * x + bx * x * x + cx * x + dx;
+    let fy = |y| ay * y * y * y + by * y * y + cy * y + dy;
     for t in 0..RESOLUTION {
         let t0 = (t as Float) / (RESOLUTION as Float);
         let t1 = ((t + 1) as Float) / (RESOLUTION as Float);
@@ -43,7 +53,17 @@ pub fn add_hermite(x0: Float, y0: Float, x1: Float, y1: Float, rx0: Float, ry0: 
 
 ///adds bezier curve to fatrix with (x0, y0) and (x3, y3) as start and end points and the other two
 ///points control points
-pub fn add_bezier(x0: Float, y0: Float, x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float, edges: &mut Space) {
+pub fn add_bezier(
+    x0: Float,
+    y0: Float,
+    x1: Float,
+    y1: Float,
+    x2: Float,
+    y2: Float,
+    x3: Float,
+    y3: Float,
+    edges: &mut Space,
+) {
     let ax = -x0 + 3.0 * x1 - 3.0 * x2 + x3;
     let bx = 3.0 * x0 - 6.0 * x1 + 3.0 * x2;
     let cx = -3.0 * x0 + 3.0 * x1;
@@ -52,8 +72,8 @@ pub fn add_bezier(x0: Float, y0: Float, x1: Float, y1: Float, x2: Float, y2: Flo
     let by = 3.0 * y0 - 6.0 * y1 + 3.0 * y2;
     let cy = -3.0 * y0 + 3.0 * y1;
     let dy = y0;
-    let fx = |x| ax * x * x * x + bx * x * x +  cx * x + dx;
-    let fy = |y| ay * y * y * y + by * y * y +  cy * y + dy;
+    let fx = |x| ax * x * x * x + bx * x * x + cx * x + dx;
+    let fy = |y| ay * y * y * y + by * y * y + cy * y + dy;
     for t in 0..RESOLUTION {
         //cast should be fine if resolution is not stupid
         let t0 = (t as Float) / (RESOLUTION as Float);
@@ -69,22 +89,22 @@ pub fn add_bezier(x0: Float, y0: Float, x1: Float, y1: Float, x2: Float, y2: Flo
 ///adds a box to the given fatrix given the front top left corner x, y, z and a width, height, and
 ///depth
 pub fn add_box(x: Float, y: Float, z: Float, w: Float, h: Float, d: Float, edges: &mut Space) {
-    edges.add_line((x, y, z), (x+w, y, z));
-    edges.add_line((x, y, z), (x, y-h, z));
-    edges.add_line((x, y, z), (x, y, z-d));
+    edges.add_line((x, y, z), (x + w, y, z));
+    edges.add_line((x, y, z), (x, y - h, z));
+    edges.add_line((x, y, z), (x, y, z - d));
 
-    edges.add_line((x+w, y, z), (x+w, y-h, z));
-    edges.add_line((x+w, y, z), (x+w, y, z-d));
+    edges.add_line((x + w, y, z), (x + w, y - h, z));
+    edges.add_line((x + w, y, z), (x + w, y, z - d));
 
-    edges.add_line((x, y-h, z), (x+w, y-h, z));
-    edges.add_line((x, y-h, z), (x, y-h, z-d));
+    edges.add_line((x, y - h, z), (x + w, y - h, z));
+    edges.add_line((x, y - h, z), (x, y - h, z - d));
 
-    edges.add_line((x, y, z-d), (x+w, y, z-d));
-    edges.add_line((x, y, z-d), (x, y-h, z-d));
+    edges.add_line((x, y, z - d), (x + w, y, z - d));
+    edges.add_line((x, y, z - d), (x, y - h, z - d));
 
-    edges.add_line((x+w, y-h, z-d), (x, y-h, z-d));
-    edges.add_line((x+w, y-h, z-d), (x+w, y, z-d));
-    edges.add_line((x+w, y-h, z-d), (x+w, y-h, z));
+    edges.add_line((x + w, y - h, z - d), (x, y - h, z - d));
+    edges.add_line((x + w, y - h, z - d), (x + w, y, z - d));
+    edges.add_line((x + w, y - h, z - d), (x + w, y - h, z));
 }
 
 ///returns a vector of the points on the sphere

@@ -165,7 +165,7 @@ impl Space {
         Self::with_capacity(0)
     }
 
-    ///reserves a certain amount of space for future lines and triangles in the Space. 
+    ///reserves a certain amount of space for future lines and triangles in the Space.
     ///This is done in both the line and triangle spaces.
     pub fn reserve(&mut self, r: usize) {
         self.lin_space.reserve(r);
@@ -180,28 +180,30 @@ impl Space {
 
     ///apply tranformation stored in a Modtrix
     pub fn apply(&mut self, transform: &Modtrix) {
-        let mult = |x: &Vec<[Float; 4]>| x.iter()
-            .map(|&v| {
-                [
-                    v[0] * transform.store[0][0]
-                        + v[1] * transform.store[0][1]
-                        + v[2] * transform.store[0][2]
-                        + v[3] * transform.store[0][3],
-                    v[0] * transform.store[1][0]
-                        + v[1] * transform.store[1][1]
-                        + v[2] * transform.store[1][2]
-                        + v[3] * transform.store[1][3],
-                    v[0] * transform.store[2][0]
-                        + v[1] * transform.store[2][1]
-                        + v[2] * transform.store[2][2]
-                        + v[3] * transform.store[2][3],
-                    v[0] * transform.store[3][0]
-                        + v[1] * transform.store[3][1]
-                        + v[2] * transform.store[3][2]
-                        + v[3] * transform.store[3][3],
-                ]
-            })
-            .collect();
+        let mult = |x: &Vec<[Float; 4]>| {
+            x.iter()
+                .map(|&v| {
+                    [
+                        v[0] * transform.store[0][0]
+                            + v[1] * transform.store[0][1]
+                            + v[2] * transform.store[0][2]
+                            + v[3] * transform.store[0][3],
+                        v[0] * transform.store[1][0]
+                            + v[1] * transform.store[1][1]
+                            + v[2] * transform.store[1][2]
+                            + v[3] * transform.store[1][3],
+                        v[0] * transform.store[2][0]
+                            + v[1] * transform.store[2][1]
+                            + v[2] * transform.store[2][2]
+                            + v[3] * transform.store[2][3],
+                        v[0] * transform.store[3][0]
+                            + v[1] * transform.store[3][1]
+                            + v[2] * transform.store[3][2]
+                            + v[3] * transform.store[3][3],
+                    ]
+                })
+                .collect()
+        };
         self.lin_space = mult(&self.lin_space);
         self.tri_space = mult(&self.tri_space);
     }
@@ -214,13 +216,11 @@ impl Space {
 
     ///draws the lines currently in the space to a given screen
     pub fn screen<T: Color>(space: &Space, color: T, s: &mut Screen<T>) {
-        space.lin_space.windows(2).step_by(2).for_each(
-            |w| {
-                let p1 = (w[0][0] as i32, w[0][1] as i32);
-                let p2 = (w[1][0] as i32, w[1][1] as i32);
-                s.draw_line(p1, p2, color);
-            }
-        );
+        space.lin_space.windows(2).step_by(2).for_each(|w| {
+            let p1 = (w[0][0] as i32, w[0][1] as i32);
+            let p2 = (w[1][0] as i32, w[1][1] as i32);
+            s.draw_line(p1, p2, color);
+        });
         //TODO: implement the 3d stuff
     }
 }
