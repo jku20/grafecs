@@ -94,11 +94,11 @@ pub fn add_box(x: Float, y: Float, z: Float, w: Float, h: Float, d: Float, edges
     edges.add_tri((x, y, z), (x + w, y - h, z), (x + w, y, z));
     //right face
     edges.add_tri((x + w, y, z), (x + w, y - h, z), (x + w, y - h, z - d));
-    edges.add_tri((x + w, y, z), (x + w, y - h, z - d), (x + w, y, z- d));
+    edges.add_tri((x + w, y, z), (x + w, y - h, z - d), (x + w, y, z - d));
 
     //back face
     edges.add_tri((x, y, z - d), (x + w, y - h, z - d), (x, y - h, z - d));
-    edges.add_tri((x + w, y, z - d), (x + w, y - h, z - d), (x, y , z - d));
+    edges.add_tri((x + w, y, z - d), (x + w, y - h, z - d), (x, y, z - d));
 
     //left face
     edges.add_tri((x, y, z), (x, y - h, z - d), (x, y - h, z));
@@ -118,7 +118,7 @@ fn sphere_points(x: Float, y: Float, z: Float, r: Float) -> Vec<Point> {
     //this conversion should be fine as long as usize isn't stupid as well
     let mut out = Vec::with_capacity(RESOLUTION * RESOLUTION);
     for p in 0..RESOLUTION {
-        for t in 0..=RESOLUTION-1 {
+        for t in 0..=RESOLUTION - 1 {
             //cast should be fine as resolution is not stupid
             let phi = (p as Float) / ((RESOLUTION - 1) as Float) * 2.0 * std::f32::consts::PI;
             let theta = (t as Float) / ((RESOLUTION - 1) as Float) * std::f32::consts::PI;
@@ -136,7 +136,7 @@ pub fn add_sphere(x: Float, y: Float, z: Float, r: Float, edges: &mut Space) {
     let p = sphere_points(x, y, z, r);
     let n = p.len();
     for i in 0..RESOLUTION {
-        for j in 0..RESOLUTION-1 {
+        for j in 0..RESOLUTION - 1 {
             let o1 = (j + i * RESOLUTION) % n;
             let o2 = (j + 1 + i * RESOLUTION) % n;
             let o3 = (j + RESOLUTION + 1 + i * RESOLUTION) % n;
@@ -144,13 +144,12 @@ pub fn add_sphere(x: Float, y: Float, z: Float, r: Float, edges: &mut Space) {
 
             if j == 0 {
                 edges.add_tri(p[o1], p[o2], p[o3]);
-            } else if j + 1 == RESOLUTION-1 {
+            } else if j + 1 == RESOLUTION - 1 {
                 edges.add_tri(p[o1], p[o3], p[o4]);
             } else {
                 edges.add_tri(p[o1], p[o2], p[o3]);
                 edges.add_tri(p[o1], p[o3], p[o4]);
             }
-
         }
     }
 }

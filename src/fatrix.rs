@@ -1,8 +1,8 @@
 //!fatrix, for four matrix (or fake matrix if you so chooes).
 //!It is a struct for 4xN matricies.
 
-use crate::screen::{color::Color, Screen};
 use crate::gmath;
+use crate::screen::{color::Color, Screen};
 
 use std::fmt::{self, Debug};
 
@@ -233,7 +233,11 @@ impl Space {
         });
         space.tri_space.windows(3).step_by(3).for_each(|w| {
             let view = (0.0, 0.0, 1.0);
-            let snorm = gmath::norm((w[0][0], w[0][1], w[0][2]), (w[1][0], w[1][1], w[1][2]), (w[2][0], w[2][1], w[2][2]));
+            let snorm = gmath::norm(
+                (w[0][0], w[0][1], w[0][2]),
+                (w[1][0], w[1][1], w[1][2]),
+                (w[2][0], w[2][1], w[2][2]),
+            );
 
             if gmath::dot(snorm, view) > 0.0 {
                 let p1 = (w[0][0] as i32, w[0][1] as i32);
