@@ -1,6 +1,6 @@
 use crate::fatrix::{Float, Point, Space};
 
-const RESOLUTION: u32 = 20;
+const RESOLUTION: usize = 20;
 
 ///Adds a circle to a given fatrix
 ///circle defined by its center point (cx, cy, cz) and a radius, r
@@ -89,37 +89,42 @@ pub fn add_bezier(
 ///adds a box to the given fatrix given the front top left corner x, y, z and a width, height, and
 ///depth
 pub fn add_box(x: Float, y: Float, z: Float, w: Float, h: Float, d: Float, edges: &mut Space) {
-    edges.add_line((x, y, z), (x + w, y, z));
-    edges.add_line((x, y, z), (x, y - h, z));
-    edges.add_line((x, y, z), (x, y, z - d));
+    //front face
+    edges.add_tri((x, y, z), (x, y - h, z), (x + w, y - h, z));
+    edges.add_tri((x, y, z), (x + w, y - h, z), (x + w, y, z));
+    //right face
+    edges.add_tri((x + w, y, z), (x + w, y - h, z), (x + w, y - h, z - d));
+    edges.add_tri((x + w, y, z), (x + w, y - h, z - d), (x + w, y, z- d));
 
-    edges.add_line((x + w, y, z), (x + w, y - h, z));
-    edges.add_line((x + w, y, z), (x + w, y, z - d));
+    //back face
+    edges.add_tri((x, y, z - d), (x + w, y - h, z - d), (x, y - h, z - d));
+    edges.add_tri((x + w, y, z - d), (x + w, y - h, z - d), (x, y , z - d));
 
-    edges.add_line((x, y - h, z), (x + w, y - h, z));
-    edges.add_line((x, y - h, z), (x, y - h, z - d));
+    //left face
+    edges.add_tri((x, y, z), (x, y - h, z - d), (x, y - h, z));
+    edges.add_tri((x, y, z), (x, y, z - d), (x, y - h, z - d));
 
-    edges.add_line((x, y, z - d), (x + w, y, z - d));
-    edges.add_line((x, y, z - d), (x, y - h, z - d));
+    //top face
+    edges.add_tri((x + w, y, z - d), (x, y, z), (x + w, y, z));
+    edges.add_tri((x + w, y, z - d), (x, y, z - d), (x, y, z));
 
-    edges.add_line((x + w, y - h, z - d), (x, y - h, z - d));
-    edges.add_line((x + w, y - h, z - d), (x + w, y, z - d));
-    edges.add_line((x + w, y - h, z - d), (x + w, y - h, z));
+    //bot face
+    edges.add_tri((x + w, y - h, z), (x, y - h, z), (x + w, y - h, z - d));
+    edges.add_tri((x, y - h, z), (x, y - h, z - d), (x + w, y - h, z - d));
 }
 
 ///returns a vector of the points on the sphere
 fn sphere_points(x: Float, y: Float, z: Float, r: Float) -> Vec<Point> {
     //this conversion should be fine as long as usize isn't stupid as well
-    let mut out = Vec::with_capacity((RESOLUTION * RESOLUTION) as usize);
+    let mut out = Vec::with_capacity(RESOLUTION * RESOLUTION);
     for p in 0..RESOLUTION {
-        for t in 0..RESOLUTION {
+        for t in 0..=RESOLUTION-1 {
             //cast should be fine as resolution is not stupid
-            let phi = (p as Float) / (RESOLUTION as Float) * 2.0 * std::f32::consts::PI;
-            let theta = (t as Float) / (RESOLUTION as Float) * std::f32::consts::PI;
+            let phi = (p as Float) / ((RESOLUTION - 1) as Float) * 2.0 * std::f32::consts::PI;
+            let theta = (t as Float) / ((RESOLUTION - 1) as Float) * std::f32::consts::PI;
             let px = r * theta.cos() + x;
             let py = r * theta.sin() * phi.cos() + y;
             let pz = r * theta.sin() * phi.sin() + z;
-
             out.push((px, py, pz));
         }
     }
@@ -128,16 +133,32 @@ fn sphere_points(x: Float, y: Float, z: Float, r: Float) -> Vec<Point> {
 
 ///adds a sphere to a fatrix given a center (x, y, z) and a radius r
 pub fn add_sphere(x: Float, y: Float, z: Float, r: Float, edges: &mut Space) {
-    let points = sphere_points(x, y, z, r);
-    for p in points {
-        edges.add_line(p, p);
+    let p = sphere_points(x, y, z, r);
+    let n = p.len();
+    for i in 0..RESOLUTION {
+        for j in 0..RESOLUTION-1 {
+            let o1 = (j + i * RESOLUTION) % n;
+            let o2 = (j + 1 + i * RESOLUTION) % n;
+            let o3 = (j + RESOLUTION + 1 + i * RESOLUTION) % n;
+            let o4 = (j + RESOLUTION + i * RESOLUTION) % n;
+
+            if j == 0 {
+                edges.add_tri(p[o1], p[o2], p[o3]);
+            } else if j + 1 == RESOLUTION-1 {
+                edges.add_tri(p[o1], p[o3], p[o4]);
+            } else {
+                edges.add_tri(p[o1], p[o2], p[o3]);
+                edges.add_tri(p[o1], p[o3], p[o4]);
+            }
+
+        }
     }
 }
 
 ///adds a torus to a fatrix given the center point (x, y, z) the radius of a cross section, r1, and
 ///the radius from the center point to the outer edge, r2
 fn torus_points(x: Float, y: Float, z: Float, r1: Float, r2: Float) -> Vec<Point> {
-    let mut out = Vec::with_capacity((RESOLUTION * RESOLUTION) as usize);
+    let mut out = Vec::with_capacity(RESOLUTION * RESOLUTION);
     for p in 0..RESOLUTION {
         for t in 0..RESOLUTION {
             let phi = (p as Float) / (RESOLUTION as Float) * 2.0 * std::f32::consts::PI;
@@ -153,8 +174,16 @@ fn torus_points(x: Float, y: Float, z: Float, r1: Float, r2: Float) -> Vec<Point
 }
 
 pub fn add_torus(x: Float, y: Float, z: Float, r1: Float, r2: Float, edges: &mut Space) {
-    let points = torus_points(x, y, z, r1, r2);
-    for p in points {
-        edges.add_line(p, p);
+    let p = torus_points(x, y, z, r1, r2);
+    let n = p.len();
+    for i in 0..RESOLUTION {
+        for j in 0..RESOLUTION {
+            let o1 = (j + i * RESOLUTION) % n;
+            let o2 = ((j + 1) % RESOLUTION + i * RESOLUTION) % n;
+            let o3 = ((j + 1) % RESOLUTION + RESOLUTION + i * RESOLUTION) % n;
+            let o4 = (j + RESOLUTION + i * RESOLUTION) % n;
+            edges.add_tri(p[o1], p[o2], p[o3]);
+            edges.add_tri(p[o1], p[o3], p[o4]);
+        }
     }
 }

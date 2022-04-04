@@ -48,6 +48,7 @@ use lrpar::{lrpar_mod, NonStreamingLexer, Span};
 mod draw;
 mod fatrix;
 mod screen;
+mod gmath;
 
 use fatrix::{Float, Modtrix, Space};
 use screen::{color::RGB8Color, Screen};

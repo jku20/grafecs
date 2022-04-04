@@ -2,6 +2,7 @@
 //!It is a struct for 4xN matricies.
 
 use crate::screen::{color::Color, Screen};
+use crate::gmath;
 
 use std::fmt::{self, Debug};
 
@@ -178,6 +179,15 @@ impl Space {
         self.lin_space.push([q.0, q.1, q.2, 1.0]);
     }
 
+    ///adds a triangle to the Space
+    ///note that p, q, and r, should be put in counter clockwise order. If you are looking at a
+    ///clock which is like a triangle the p would be at 9:00, the q at 7:00, and the r at 4:00
+    pub fn add_tri(&mut self, p: Point, q: Point, r: Point) {
+        self.tri_space.push([p.0, p.1, p.2, 1.0]);
+        self.tri_space.push([q.0, q.1, q.2, 1.0]);
+        self.tri_space.push([r.0, r.1, r.2, 1.0]);
+    }
+
     ///apply tranformation stored in a Modtrix
     pub fn apply(&mut self, transform: &Modtrix) {
         let mult = |x: &Vec<[Float; 4]>| {
@@ -221,6 +231,19 @@ impl Space {
             let p2 = (w[1][0] as i32, w[1][1] as i32);
             s.draw_line(p1, p2, color);
         });
-        //TODO: implement the 3d stuff
+        space.tri_space.windows(3).step_by(3).for_each(|w| {
+            let view = (0.0, 0.0, 1.0);
+            let snorm = gmath::norm((w[0][0], w[0][1], w[0][2]), (w[1][0], w[1][1], w[1][2]), (w[2][0], w[2][1], w[2][2]));
+
+            if gmath::dot(snorm, view) > 0.0 {
+                let p1 = (w[0][0] as i32, w[0][1] as i32);
+                let p2 = (w[1][0] as i32, w[1][1] as i32);
+                let p3 = (w[2][0] as i32, w[2][1] as i32);
+
+                s.draw_line(p1, p2, color);
+                s.draw_line(p2, p3, color);
+                s.draw_line(p3, p1, color);
+            }
+        });
     }
 }
