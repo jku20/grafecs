@@ -1,5 +1,5 @@
-//!fatrix, for four matrix (or fake matrix if you so chooes).
-//!It is a struct for 4xN matricies.
+//!a collection of structs dealing with spaces to put shapes in
+//!a lot of the stuff in here are just wrappers for 4xN matricies.
 
 use crate::gmath;
 use crate::screen::{color::Color, Screen};

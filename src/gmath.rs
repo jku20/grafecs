@@ -1,3 +1,5 @@
+//!misc math functions useful for graphics programming
+
 use crate::fatrix::{Float, Point};
 
 pub fn dot(v1: Point, v2: Point) -> Float {
