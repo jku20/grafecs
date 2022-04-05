@@ -102,18 +102,12 @@ impl<T: Color> Screen<T> {
         }
     }
 
-    ///Write contents as ppm to specified file path.
-    ///The header writes in the binary format
-    pub fn write_binary_ppm(&self, file: &mut File) -> Result<(), io::Error> {
-        let mut file = BufWriter::new(file);
+    pub fn byte_vec(&self) -> Vec<u8> {
+        let mut out = Vec::new();
         let max_val = T::max_val();
-        write!(
-            file,
-            "P6\n{} {}\n{}\n",
-            self.width,
-            self.height,
-            T::max_val()
-        )?;
+        out.extend_from_slice(
+            format!("P6\n{} {}\n{}\n", self.width, self.height, T::max_val()).as_bytes(),
+        );
         for v in self.grid.iter().rev() {
             for c in v {
                 //panic on malformed max_val
@@ -123,15 +117,22 @@ impl<T: Color> Screen<T> {
                 //256 is the magic number for ppm files
                 //this should also mean the below never panics
                 if max_val < 256 {
-                    file.write_all(&[c.red() as u8, c.green() as u8, c.blue() as u8])?;
+                    out.extend_from_slice(&[c.red() as u8, c.green() as u8, c.blue() as u8]);
                 } else {
-                    file.write_all(&c.red().to_le_bytes())?;
-                    file.write_all(&c.green().to_le_bytes())?;
-                    file.write_all(&c.blue().to_le_bytes())?;
+                    out.extend_from_slice(&c.red().to_le_bytes());
+                    out.extend_from_slice(&c.green().to_le_bytes());
+                    out.extend_from_slice(&c.blue().to_le_bytes());
                 }
             }
         }
-        file.flush()?;
+        out
+    }
+
+    ///Write contents as ppm to specified file path.
+    ///The header writes in the binary format
+    pub fn write_binary_ppm(&self, file: &mut File) -> Result<(), io::Error> {
+        let mut file = BufWriter::new(file);
+        file.write_all(&self.byte_vec())?;
         Ok(())
     }
 

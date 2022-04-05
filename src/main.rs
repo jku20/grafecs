@@ -38,8 +38,9 @@
 use std::env;
 use std::error::Error;
 use std::fs::{self, File};
+use std::io::Write;
 use std::path::PathBuf;
-use std::process::{self, Command};
+use std::process::{self, Command, Stdio};
 
 use dwscript_y::Expr;
 use lrlex::{lrlex_mod, DefaultLexeme};
@@ -53,7 +54,6 @@ mod screen;
 use fatrix::{Float, Modtrix, Space};
 use screen::{color::RGB8Color, Screen};
 
-const TMP_FILE_NAME: &str = "graphics_out";
 const IMAGE_WIDTH: usize = 500;
 const IMAGE_HEIGHT: usize = 500;
 
@@ -146,20 +146,23 @@ fn eval<'a>(
             Ok("")
         }
         Expr::Display { span } => {
-            let file_ppm = format!(".tmp_displayfilelhfgfhgf{}.ppm", TMP_FILE_NAME);
-            let path = PathBuf::from(&file_ppm);
-            let mut file = File::create(&path).map_err(|_| (span, "failed create file path"))?;
             let mut scrn = Screen::<RGB8Color>::with_size(IMAGE_WIDTH, IMAGE_HEIGHT);
             Space::screen(twoson, (255, 255, 255).into(), &mut scrn);
-            scrn.write_binary_ppm(&mut file)
-                .map_err(|_| (span, "failed to write ppm file"))?;
-            //requires imagemagick
-            Command::new("display")
-                .arg(&file_ppm)
-                .status()
-                .map_err(|_| (span, "failed to display file"))?;
+            let mut display_command = Command::new("display")
+                .stdin(Stdio::piped())
+                .spawn()
+                .map_err(|_| (span, "failed to display image"))?;
 
-            fs::remove_file(&file_ppm).map_err(|_| (span, "couldn't remove tmp file"))?;
+            //hopefully unwrap won't fail
+            display_command
+                .stdin
+                .as_mut()
+                .ok_or((span, "failed to display image"))?
+                .write_all(&scrn.byte_vec())
+                .map_err(|_| (span, "failed to display image"))?;
+            display_command
+                .wait()
+                .map_err(|_| (span, "failed to display image"))?;
             Ok("")
         }
         Expr::Save { span, file } => {
