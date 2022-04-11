@@ -56,80 +56,97 @@ use screen::{color::RGB8Color, Screen};
 
 const IMAGE_WIDTH: usize = 500;
 const IMAGE_HEIGHT: usize = 500;
+const LINE_COLOR: RGB8Color = RGB8Color::WHITE;
 
 lrlex_mod!("dwscript.l");
 lrpar_mod!("dwscript.y");
 
+///given a screen, a coordinate system/Modtrix, and a "good" draw function, the macro will draw
+///the shape made with that draw function to the screen
+macro_rules! draw_to_screen {
+    ( $screen:expr, $sys:expr, $shape:expr, $color:expr ,$( $args:expr ),* ) => {
+        {
+            let mut f = Space::new();
+            $shape($( $args ),*, &mut f);
+            f.apply($sys);
+            Space::draw_space(&f, $color, $screen);
+        }
+    };
+}
+
 ///Evaluates the AST built by the parser
-//FIXME: fix filename clashing
 fn eval<'a>(
     lexer: &'a dyn NonStreamingLexer<DefaultLexeme, u32>,
     e: Expr,
-    trans: &mut Modtrix,
-    twoson: &mut Space,
+    coord: &mut Vec<Modtrix>,
+    scrn: &mut Screen<RGB8Color>,
 ) -> Result<&'a str, (Span, &'static str)> {
     match e {
         Expr::Expr { span: _span, cmds } => {
             for c in cmds {
-                eval(lexer, c, trans, twoson)?;
+                eval(lexer, c, coord, scrn)?;
             }
             Ok("")
         }
         Expr::Command { span: _span, fun } => {
-            eval(lexer, *fun, trans, twoson)?;
+            eval(lexer, *fun, coord, scrn)?;
             Ok("")
         }
         Expr::Function { span: _span, typ } => {
-            eval(lexer, *typ, trans, twoson)?;
+            eval(lexer, *typ, coord, scrn)?;
             Ok("")
         }
         Expr::Line { span, args } => {
             let nums = args
                 .into_iter()
                 .map(|x| {
-                    eval(lexer, *x, trans, twoson)?
+                    eval(lexer, *x, coord, scrn)?
                         .parse()
                         .map_err(|_| (span, "input not a number"))
                 })
                 .collect::<Vec<Result<_, _>>>();
             let p1 = (nums[0]?, nums[1]?, nums[2]?);
             let p2 = (nums[3]?, nums[4]?, nums[5]?);
-            twoson.add_line(p1, p2);
+            draw_to_screen!(
+                scrn,
+                coord.last().unwrap(),
+                draw::add_line,
+                LINE_COLOR,
+                p1,
+                p2
+            );
             Ok("")
         }
-        Expr::Ident { span: _span } => {
-            trans.ident();
-            Ok("")
-        }
+        Expr::Ident { span: _span } => Ok(""),
         Expr::Scale { span, args } => {
             let nums = args
                 .into_iter()
                 .map(|x| {
-                    eval(lexer, *x, trans, twoson)?
+                    eval(lexer, *x, coord, scrn)?
                         .parse()
                         .map_err(|_| (span, "input not a number"))
                 })
                 .collect::<Vec<Result<_, _>>>();
             let sm = scale_matrix!(nums[0]?, nums[1]?, nums[2]?);
-            Modtrix::mult(&sm, trans);
+            Modtrix::multr(coord.last_mut().unwrap(), &sm);
             Ok("")
         }
         Expr::Move { span, args } => {
             let nums = args
                 .into_iter()
                 .map(|x| {
-                    eval(lexer, *x, trans, twoson)?
+                    eval(lexer, *x, coord, scrn)?
                         .parse()
                         .map_err(|_| (span, "input not a number"))
                 })
                 .collect::<Vec<Result<_, _>>>();
             let mm = move_matrix!(nums[0]?, nums[1]?, nums[2]?);
-            Modtrix::mult(&mm, trans);
+            Modtrix::multr(coord.last_mut().unwrap(), &mm);
             Ok("")
         }
         Expr::Rotate { span, axis, deg } => {
-            let a = eval(lexer, *axis, trans, twoson)?;
-            let t = eval(lexer, *deg, trans, twoson)?
+            let a = eval(lexer, *axis, coord, scrn)?;
+            let t = eval(lexer, *deg, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse angle of rotation"))?;
             let rm = match a {
@@ -138,16 +155,11 @@ fn eval<'a>(
                 "z" => rotz_matrix!(t),
                 _ => return Err((span, "cannot parse axis")),
             };
-            Modtrix::mult(&rm, trans);
+            Modtrix::multr(coord.last_mut().unwrap(), &rm);
             Ok("")
         }
-        Expr::Apply { span: _span } => {
-            twoson.apply(trans);
-            Ok("")
-        }
+        Expr::Apply { span: _span } => Ok(""),
         Expr::Display { span } => {
-            let mut scrn = Screen::<RGB8Color>::with_size(IMAGE_WIDTH, IMAGE_HEIGHT);
-            Space::screen(twoson, (255, 255, 255).into(), &mut scrn);
             let mut display_command = Command::new("display")
                 .stdin(Stdio::piped())
                 .spawn()
@@ -166,12 +178,10 @@ fn eval<'a>(
             Ok("")
         }
         Expr::Save { span, file } => {
-            let file_name = eval(lexer, *file, trans, twoson)?;
+            let file_name = eval(lexer, *file, coord, scrn)?;
             let file_ppm = format!(".tmp_convertfilelhfgfhgf{}.ppm", file_name);
             let path = PathBuf::from(&file_ppm);
             let mut file = File::create(&path).map_err(|_| (span, "failed create file path"))?;
-            let mut scrn = Screen::<RGB8Color>::with_size(IMAGE_WIDTH, IMAGE_HEIGHT);
-            Space::screen(twoson, (255, 255, 255).into(), &mut scrn);
             scrn.write_binary_ppm(&mut file)
                 .map_err(|_| (span, "failed to write ppm file"))?;
             //requires imagemgick
@@ -190,19 +200,28 @@ fn eval<'a>(
             cz,
             r,
         } => {
-            let cx = eval(lexer, *cx, trans, twoson)?
+            let cx = eval(lexer, *cx, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let cy = eval(lexer, *cy, trans, twoson)?
+            let cy = eval(lexer, *cy, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let cz = eval(lexer, *cz, trans, twoson)?
+            let cz = eval(lexer, *cz, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let r = eval(lexer, *r, trans, twoson)?
+            let r = eval(lexer, *r, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            draw::add_circle(cx, cy, cz, r, twoson);
+            draw_to_screen!(
+                scrn,
+                coord.last().unwrap(),
+                draw::add_circle,
+                LINE_COLOR,
+                cx,
+                cy,
+                cz,
+                r
+            );
             Ok("")
         }
         Expr::Hermite {
@@ -216,31 +235,44 @@ fn eval<'a>(
             rx1,
             ry1,
         } => {
-            let x0 = eval(lexer, *x0, trans, twoson)?
+            let x0 = eval(lexer, *x0, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let y0 = eval(lexer, *y0, trans, twoson)?
+            let y0 = eval(lexer, *y0, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let x1 = eval(lexer, *x1, trans, twoson)?
+            let x1 = eval(lexer, *x1, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let y1 = eval(lexer, *y1, trans, twoson)?
+            let y1 = eval(lexer, *y1, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let rx0 = eval(lexer, *rx0, trans, twoson)?
+            let rx0 = eval(lexer, *rx0, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let ry0 = eval(lexer, *ry0, trans, twoson)?
+            let ry0 = eval(lexer, *ry0, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let rx1 = eval(lexer, *rx1, trans, twoson)?
+            let rx1 = eval(lexer, *rx1, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let ry1 = eval(lexer, *ry1, trans, twoson)?
+            let ry1 = eval(lexer, *ry1, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            draw::add_hermite(x0, y0, x1, y1, rx0, ry0, rx1, ry1, twoson);
+            draw_to_screen!(
+                scrn,
+                coord.last().unwrap(),
+                draw::add_hermite,
+                LINE_COLOR,
+                x0,
+                y0,
+                x1,
+                y1,
+                rx0,
+                ry0,
+                rx1,
+                ry1
+            );
             Ok("")
         }
         Expr::Bezier {
@@ -254,44 +286,66 @@ fn eval<'a>(
             x3,
             y3,
         } => {
-            let x0 = eval(lexer, *x0, trans, twoson)?
+            let x0 = eval(lexer, *x0, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let y0 = eval(lexer, *y0, trans, twoson)?
+            let y0 = eval(lexer, *y0, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let x1 = eval(lexer, *x1, trans, twoson)?
+            let x1 = eval(lexer, *x1, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let y1 = eval(lexer, *y1, trans, twoson)?
+            let y1 = eval(lexer, *y1, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let x2 = eval(lexer, *x2, trans, twoson)?
+            let x2 = eval(lexer, *x2, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let y2 = eval(lexer, *y2, trans, twoson)?
+            let y2 = eval(lexer, *y2, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let x3 = eval(lexer, *x3, trans, twoson)?
+            let x3 = eval(lexer, *x3, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            let y3 = eval(lexer, *y3, trans, twoson)?
+            let y3 = eval(lexer, *y3, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            draw::add_bezier(x0, y0, x1, y1, x2, y2, x3, y3, twoson);
+            draw_to_screen!(
+                scrn,
+                coord.last().unwrap(),
+                draw::add_bezier,
+                LINE_COLOR,
+                x0,
+                y0,
+                x1,
+                y1,
+                x2,
+                y2,
+                x3,
+                y3
+            );
             Ok("")
         }
         Expr::Box { span, args } => {
             let args = args
                 .into_iter()
                 .map(|x| {
-                    eval(lexer, *x, trans, twoson)?
+                    eval(lexer, *x, coord, scrn)?
                         .parse()
                         .map_err(|_| (span, "input not a number"))
                 })
                 .collect::<Vec<Result<_, _>>>();
-            draw::add_box(
-                args[0]?, args[1]?, args[2]?, args[3]?, args[4]?, args[5]?, twoson,
+            draw_to_screen!(
+                scrn,
+                coord.last().unwrap(),
+                draw::add_box,
+                LINE_COLOR,
+                args[0]?,
+                args[1]?,
+                args[2]?,
+                args[3]?,
+                args[4]?,
+                args[5]?
             );
             Ok("")
         }
@@ -299,28 +353,52 @@ fn eval<'a>(
             let args = args
                 .into_iter()
                 .map(|x| {
-                    eval(lexer, *x, trans, twoson)?
+                    eval(lexer, *x, coord, scrn)?
                         .parse()
                         .map_err(|_| (span, "input not a number"))
                 })
                 .collect::<Vec<Result<_, _>>>();
-            draw::add_sphere(args[0]?, args[1]?, args[2]?, args[3]?, twoson);
+            draw_to_screen!(
+                scrn,
+                coord.last().unwrap(),
+                draw::add_sphere,
+                LINE_COLOR,
+                args[0]?,
+                args[1]?,
+                args[2]?,
+                args[3]?
+            );
             Ok("")
         }
         Expr::Torus { span, args } => {
             let args = args
                 .into_iter()
                 .map(|x| {
-                    eval(lexer, *x, trans, twoson)?
+                    eval(lexer, *x, coord, scrn)?
                         .parse()
                         .map_err(|_| (span, "input not a number"))
                 })
                 .collect::<Vec<Result<_, _>>>();
-            draw::add_torus(args[0]?, args[1]?, args[2]?, args[3]?, args[4]?, twoson);
+            draw_to_screen!(
+                scrn,
+                coord.last().unwrap(),
+                draw::add_torus,
+                LINE_COLOR,
+                args[0]?,
+                args[1]?,
+                args[2]?,
+                args[3]?,
+                args[4]?
+            );
             Ok("")
         }
-        Expr::Clear { span: _span } => {
-            twoson.clear();
+        Expr::Clear { span: _span } => Ok(""),
+        Expr::Push { span: _span } => {
+            coord.push(coord.last().unwrap().clone());
+            Ok("")
+        }
+        Expr::Pop { span: _span } => {
+            coord.pop();
             Ok("")
         }
         Expr::Num { span } => Ok(lexer.span_str(span)),
@@ -341,9 +419,10 @@ fn run() -> Result<(), Box<dyn Error>> {
         println!("{}", e.pp(&lexer, &dwscript_y::token_epp));
     }
     if let Some(Ok(r)) = res {
-        let mut trans = Modtrix::IDENT.clone();
-        let mut edges = Space::new();
-        if let Err((span, msg)) = eval(&lexer, r, &mut trans, &mut edges) {
+        let mut coords = vec![Modtrix::IDENT];
+        let mut scrn = Screen::<RGB8Color>::with_size(IMAGE_WIDTH, IMAGE_HEIGHT);
+
+        if let Err((span, msg)) = eval(&lexer, r, &mut coords, &mut scrn) {
             let ((line, col), _) = lexer.line_col(span);
             eprintln!(
                 "Error parsing scriptat line {} column {}, '{}' {}.",

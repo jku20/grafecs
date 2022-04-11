@@ -6,8 +6,7 @@ use std::io::{self, BufWriter, Write};
 use std::ops::{Index, IndexMut};
 
 pub mod color;
-
-use color::Color;
+pub use color::Color;
 
 type Point = (i32, i32);
 

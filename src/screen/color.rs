@@ -20,6 +20,14 @@ pub struct RGB8Color {
     blue: u8,
 }
 
+impl RGB8Color {
+    pub const WHITE: Self = Self {
+        red: 255,
+        green: 255,
+        blue: 255,
+    };
+}
+
 impl Color for RGB8Color {
     fn red(&self) -> u16 {
         self.red.into()

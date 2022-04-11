@@ -41,10 +41,13 @@ impl Modtrix {
             [0.0, 0.0, 0.0, 1.0],
         ],
     };
+    /*
     pub fn ident(&mut self) {
         self.store = Self::IDENT.store;
     }
-    pub fn mult(lhs: &Modtrix, rhs: &mut Modtrix) {
+    */
+    /*
+    pub fn multl(lhs: &Modtrix, rhs: &mut Modtrix) {
         //make sure the multiplication is actually defined, else panic
         //Note that the modtrix length is 4
         //FIXME: currently doesn't work
@@ -57,6 +60,21 @@ impl Modtrix {
             }
         }
         rhs.store = res;
+    }
+    */
+    pub fn multr(lhs: &mut Modtrix, rhs: &Modtrix) {
+        //make sure the multiplication is actually defined, else panic
+        //Note that the modtrix length is 4
+        //FIXME: currently doesn't work
+        let mut res = [[0.0; 4]; 4];
+        for (i, row) in res.iter_mut().enumerate() {
+            for (j, num) in row.iter_mut().enumerate() {
+                for k in 0..4 {
+                    *num += lhs.store[i][k] * rhs.store[k][j];
+                }
+            }
+        }
+        lhs.store = res;
     }
 }
 
@@ -166,12 +184,14 @@ impl Space {
         Self::with_capacity(0)
     }
 
+    /*
     ///reserves a certain amount of space for future lines and triangles in the Space.
     ///This is done in both the line and triangle spaces.
     pub fn reserve(&mut self, r: usize) {
         self.lin_space.reserve(r);
         self.tri_space.reserve(r);
     }
+    */
 
     ///adds an line to the Space
     pub fn add_line(&mut self, p: Point, q: Point) {
@@ -218,14 +238,16 @@ impl Space {
         self.tri_space = mult(&self.tri_space);
     }
 
+    /*
     ///clears all the lines from the current space
     pub fn clear(&mut self) {
         self.lin_space.clear();
         self.tri_space.clear();
     }
+    */
 
     ///draws the lines currently in the space to a given screen
-    pub fn screen<T: Color>(space: &Space, color: T, s: &mut Screen<T>) {
+    pub fn draw_space<T: Color>(space: &Space, color: T, s: &mut Screen<T>) {
         space.lin_space.windows(2).step_by(2).for_each(|w| {
             let p1 = (w[0][0] as i32, w[0][1] as i32);
             let p2 = (w[1][0] as i32, w[1][1] as i32);

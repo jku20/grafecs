@@ -35,6 +35,8 @@ Function -> Result<Expr, ()>:
     | Sphere { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     | Torus { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     | Clear { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
+    | Push { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
+    | Pop { Ok( Expr::Function { span: $span, typ: Box::new($1?) } ) }
     ;
 
 Line -> Result<Expr, ()>:
@@ -159,6 +161,14 @@ Clear -> Result<Expr, ()>:
     'CLEAR' { Ok( Expr::Clear { span: $span } ) }
     ;
 
+Push -> Result<Expr, ()>:
+    'PUSH' { Ok( Expr::Push { span: $span } ) }
+    ;
+
+Pop -> Result<Expr, ()>:
+    'POP' { Ok( Expr::Pop { span: $span } ) }
+    ;
+
 Num -> Result<Expr, ()>:
     'NUM' { Ok( Expr::Num { span: $span } ) }
     ;
@@ -270,6 +280,12 @@ pub enum Expr {
         args: [Box<Expr>; 5],
     },
     Clear {
+        span: Span,
+    },
+    Push {
+        span: Span,
+    },
+    Pop {
         span: Span,
     },
     Num {

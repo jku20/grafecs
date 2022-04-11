@@ -156,8 +156,6 @@ pub fn add_sphere(x: Float, y: Float, z: Float, r: Float, edges: &mut Space) {
     }
 }
 
-///adds a torus to a fatrix given the center point (x, y, z) the radius of a cross section, r1, and
-///the radius from the center point to the outer edge, r2
 fn torus_points(x: Float, y: Float, z: Float, r1: Float, r2: Float) -> Vec<Point> {
     let mut out = Vec::with_capacity(RESOLUTION * RESOLUTION);
     for p in 0..RESOLUTION {
@@ -174,6 +172,8 @@ fn torus_points(x: Float, y: Float, z: Float, r1: Float, r2: Float) -> Vec<Point
     out
 }
 
+///adds a torus to a fatrix given the center point (x, y, z) the radius of a cross section, r1, and
+///the radius from the center point to the outer edge, r2
 pub fn add_torus(x: Float, y: Float, z: Float, r1: Float, r2: Float, edges: &mut Space) {
     let p = torus_points(x, y, z, r1, r2);
     let n = p.len();
@@ -187,4 +187,9 @@ pub fn add_torus(x: Float, y: Float, z: Float, r1: Float, r2: Float, edges: &mut
             edges.add_tri(p[o1], p[o3], p[o4]);
         }
     }
+}
+
+///simple wrapper function for add_line
+pub fn add_line(p: Point, q: Point, edges: &mut Space) {
+    edges.add_line(p, q);
 }
