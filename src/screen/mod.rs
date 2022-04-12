@@ -137,27 +137,4 @@ impl<T: Color> Screen<T> {
         file.write_all(&self.byte_vec())?;
         Ok(())
     }
-
-    /*
-    ///Write contents as ppm to specified file path.
-    ///The header writes ascii colors for readability
-    pub fn write_ascii_ppm(&self, file: &mut File) -> Result<(), io::Error> {
-        let mut file = BufWriter::new(file);
-        write!(
-            file,
-            "P3\n{} {}\n{}\n",
-            self.width,
-            self.height,
-            T::max_val()
-        )?;
-        for v in self.grid.iter().rev() {
-            for c in v {
-                write!(file, "{} {} {} ", c.red(), c.green(), c.blue())?;
-            }
-            writeln!(file)?;
-        }
-        file.flush()?;
-        Ok(())
-    }
-    */
 }
