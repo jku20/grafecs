@@ -41,7 +41,7 @@ impl Modtrix {
             [0.0, 0.0, 0.0, 1.0],
         ],
     };
-    
+
     pub fn multr(lhs: &mut Modtrix, rhs: &Modtrix) {
         //make sure the multiplication is actually defined, else panic
         //Note that the modtrix length is 4

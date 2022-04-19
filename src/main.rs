@@ -106,13 +106,7 @@ fn eval<'a>(
                 .collect::<Vec<Result<_, _>>>();
             let p1 = (nums[0]?, nums[1]?, nums[2]?);
             let p2 = (nums[3]?, nums[4]?, nums[5]?);
-            draw_to_screen!(
-                scrn,
-                coord.last().unwrap(),
-                draw::add_line,
-                p1,
-                p2
-            );
+            draw_to_screen!(scrn, coord.last().unwrap(), draw::add_line, p1, p2);
             Ok("")
         }
         Expr::Ident { span: _span } => Ok(""),
@@ -210,15 +204,7 @@ fn eval<'a>(
             let r = eval(lexer, *r, coord, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            draw_to_screen!(
-                scrn,
-                coord.last().unwrap(),
-                draw::add_circle,
-                cx,
-                cy,
-                cz,
-                r
-            );
+            draw_to_screen!(scrn, coord.last().unwrap(), draw::add_circle, cx, cy, cz, r);
             Ok("")
         }
         Expr::Hermite {

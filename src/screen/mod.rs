@@ -4,7 +4,7 @@
 use std::fs::File;
 use std::io::{self, BufWriter, Write};
 
-use crate::fatrix::{Point, Float};
+use crate::fatrix::{Float, Point};
 
 pub mod color;
 pub use color::Color;
@@ -56,7 +56,7 @@ impl<T: Color> Screen<T> {
     }
 
     fn plot(&mut self, x: i32, y: i32, z: Float, color: T) {
-        if x >=0 && y >= 0 {
+        if x >= 0 && y >= 0 {
             let cx = x as usize;
             let cy = y as usize;
             if cx < self.width() && cy < self.height() && self.zbuffer[cy][cx] - z < Z_RESOLUTION {
@@ -98,11 +98,11 @@ impl<T: Color> Screen<T> {
             ex -= dx;
             ey -= dy;
             ez -= dz;
-            if ex < 0  {
+            if ex < 0 {
                 ex += dm;
                 x += sx;
             }
-            if ey < 0  {
+            if ey < 0 {
                 ey += dm;
                 y += sy;
             }
@@ -140,7 +140,7 @@ impl<T: Color> Screen<T> {
         let dz0 = (tt.2 - tb.2) / dytb;
         let dz1l = (tm.2 - tb.2) / dymb;
         let dz1u = (tt.2 - tm.2) / dytm;
-        
+
         let (mut x0, mut x1, mut z0, mut z1) = (tb.0, tb.0, tb.2, tb.2);
         if y_mid == y_bot {
             x1 = tm.0;
@@ -163,8 +163,8 @@ impl<T: Color> Screen<T> {
                 cdz = (z0 - z1) / (x_fin - x_start + 1) as Float;
             }
             for curx in x_start..=x_fin {
-                 self.plot(curx, y, curz, color);
-                 curz += cdz;
+                self.plot(curx, y, curz, color);
+                curz += cdz;
             }
 
             if y < y_mid {

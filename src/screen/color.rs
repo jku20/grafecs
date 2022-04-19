@@ -34,7 +34,11 @@ impl Color for RGB8Color {
         self.blue.into()
     }
     fn random_color() -> Self {
-        Self { red: random(), green: random(), blue: random() }
+        Self {
+            red: random(),
+            green: random(),
+            blue: random(),
+        }
     }
     fn max_val() -> u16 {
         u8::MAX.into()
@@ -70,7 +74,11 @@ impl Color for RGB16Color {
         self.blue
     }
     fn random_color() -> Self {
-        Self { red: random(), green: random(), blue: random() }
+        Self {
+            red: random(),
+            green: random(),
+            blue: random(),
+        }
     }
     fn max_val() -> u16 {
         u16::MAX
