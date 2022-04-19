@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+use rand::random;
+
 ///A trait implemented by structs storing one pixel's color is stored.
 ///As this project is meant only to write to the ppm format, colors
 ///should be `u16`s as that is the maximum color value of that format.
@@ -7,6 +9,7 @@ pub trait Color: Debug + Default + Clone + Copy {
     fn red(&self) -> u16;
     fn blue(&self) -> u16;
     fn green(&self) -> u16;
+    fn random_color() -> Self;
     ///The maximum value for any element of the RGB triple.
     ///Could panic if malformed
     fn max_val() -> u16;
@@ -20,14 +23,6 @@ pub struct RGB8Color {
     blue: u8,
 }
 
-impl RGB8Color {
-    pub const WHITE: Self = Self {
-        red: 255,
-        green: 255,
-        blue: 255,
-    };
-}
-
 impl Color for RGB8Color {
     fn red(&self) -> u16 {
         self.red.into()
@@ -37,6 +32,9 @@ impl Color for RGB8Color {
     }
     fn blue(&self) -> u16 {
         self.blue.into()
+    }
+    fn random_color() -> Self {
+        Self { red: random(), green: random(), blue: random() }
     }
     fn max_val() -> u16 {
         u8::MAX.into()
@@ -70,6 +68,9 @@ impl Color for RGB16Color {
     }
     fn blue(&self) -> u16 {
         self.blue
+    }
+    fn random_color() -> Self {
+        Self { red: random(), green: random(), blue: random() }
     }
     fn max_val() -> u16 {
         u16::MAX

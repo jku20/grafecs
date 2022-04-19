@@ -3,19 +3,26 @@
 
 use std::fs::File;
 use std::io::{self, BufWriter, Write};
-use std::ops::{Index, IndexMut};
+
+use crate::fatrix::{Point, Float};
 
 pub mod color;
 pub use color::Color;
 
-type Point = (i32, i32);
+///the z axis is always quanitized for a computer
+///this constatnt represents how many units one quantum of space is
+///the larger the number the more inpercise, but also possibly nicer looking (becaues maybe less
+///pixels with similar z values fighting)
+const Z_RESOLUTION: Float = 0.00;
 
 ///Screen containting a grid of colors.
 ///This is the final destination before the grid is written to a file.
 ///Kind of just a wrapper for a color vector.
 #[derive(Debug, Clone)]
 pub struct Screen<T: Color> {
+    //remember, the grids are stored transposed
     grid: Vec<Vec<T>>,
+    zbuffer: Vec<Vec<Float>>,
 
     ///Height of screen, bottom of grid is 0.
     width: usize,
@@ -23,31 +30,11 @@ pub struct Screen<T: Color> {
     height: usize,
 }
 
-///Can panic if the index is too large
-///Note that indexing has 0,0 on bottom left.
-///The higher the first index, the furthur right,
-///the higher the second index, the furthur up.
-impl<T: Color> Index<[usize; 2]> for Screen<T> {
-    type Output = T;
-    fn index(&self, index: [usize; 2]) -> &T {
-        &self.grid[index[1]][index[0]]
-    }
-}
-
-///Can panic if the index is too large
-///Note that indexing has 0,0 on bottom left.
-///The higher the first index, the furthur right,
-///the higher the second index, the furthur up.
-impl<T: Color> IndexMut<[usize; 2]> for Screen<T> {
-    fn index_mut(&mut self, index: [usize; 2]) -> &mut T {
-        &mut self.grid[index[1]][index[0]]
-    }
-}
-
 impl<T: Color> Screen<T> {
     pub fn with_size(width: usize, height: usize) -> Screen<T> {
         Screen {
             grid: vec![vec![T::default(); width]; height],
+            zbuffer: vec![vec![Float::NEG_INFINITY; width]; height],
             width,
             height,
         }
@@ -62,14 +49,20 @@ impl<T: Color> Screen<T> {
     pub fn height(&self) -> usize {
         self.height
     }
+    ///clears current screen to default color
+    pub fn clear(&mut self) {
+        self.grid = vec![vec![T::default(); self.width()]; self.height()];
+        self.zbuffer = vec![vec![Float::NEG_INFINITY; self.width()]; self.height()];
+    }
 
-    ///Plots a point p to the screen.
-    ///Points which are off the screen will be ignored.
-    ///Should never panic except for really weird cases I don't understand due to the order of the
-    ///checks.
-    pub fn plot(&mut self, p: Point, color: T) {
-        if p.0 >= 0 && p.1 >= 0 && (p.0 as usize) < self.width() && (p.1 as usize) < self.height() {
-            self[[p.0 as usize, p.1 as usize]] = color;
+    fn plot(&mut self, x: i32, y: i32, z: Float, color: T) {
+        if x >=0 && y >= 0 {
+            let cx = x as usize;
+            let cy = y as usize;
+            if cx < self.width() && cy < self.height() && self.zbuffer[cy][cx] - z < Z_RESOLUTION {
+                self.zbuffer[cy][cx] = z;
+                self.grid[cy][cx] = color;
+            }
         }
     }
 
@@ -80,27 +73,109 @@ impl<T: Color> Screen<T> {
     pub fn draw_line(&mut self, p1: Point, p2: Point, color: T) {
         //algorithm by Alois Zingl (https://zingl.github.io/Bresenham.pdf)
         //used because it is super clean
-        let dx = (p2.0 - p1.0).abs();
-        let dy = -(p2.1 - p1.1).abs();
-        let sx = (p2.0 - p1.0).signum();
-        let sy = (p2.1 - p1.1).signum();
 
-        let mut e = dx + dy;
-        let (mut x, mut y) = (p1.0, p1.1);
-        loop {
-            self.plot((x, y), color);
-            if x == p2.0 && y == p2.1 {
-                break;
-            }
-            let et = e * 2;
-            if et >= dy {
+        //the x and y coords are stuffed into integers because stuff is more accuate and looks better
+        let x1 = p1.0 as i32;
+        let x2 = p2.0 as i32;
+        let y1 = p1.1 as i32;
+        let y2 = p2.1 as i32;
+
+        let dx = (x2 - x1).abs();
+        let dy = (y2 - y1).abs();
+        let dz = (p2.2 - p1.2).abs();
+        let sx = (x2 - x1).signum();
+        let sy = (y2 - y1).signum();
+        let sz = (p2.2 - p1.2).signum();
+
+        let dm = dx.max(dy).max(dz as i32);
+        let dmf = ((p2.0 - p1.0).abs()).max((p2.1 - p1.1).abs()).max(dz);
+
+        let (mut x, mut y, mut z) = (x1, y1, p1.2);
+        let (mut ex, mut ey, mut ez) = (dm / 2, dm / 2, dmf / 2.0);
+        for _ in 0..=dm {
+            self.plot(x, y, z, color);
+
+            ex -= dx;
+            ey -= dy;
+            ez -= dz;
+            if ex < 0  {
+                ex += dm;
                 x += sx;
-                e += dy;
             }
-            if et <= dx {
+            if ey < 0  {
+                ey += dm;
                 y += sy;
-                e += dx;
             }
+            if ez < 0.0 {
+                ez += dmf;
+                z += sz;
+            }
+        }
+    }
+
+    ///Draws a triangle of pixels to the screen
+    pub fn draw_tri(&mut self, p1: Point, p2: Point, p3: Point, color: T) {
+        let (mut tt, mut tm, mut tb) = (p1, p2, p3);
+        if tm.1 > tt.1 {
+            (tt, tm) = (tm, tt);
+        }
+        if tb.1 > tm.1 {
+            (tm, tb) = (tb, tm);
+        }
+        if tm.1 > tt.1 {
+            (tt, tm) = (tm, tt);
+        }
+
+        let y_fin = tt.1 as i32;
+        let y_mid = tm.1 as i32;
+        let y_bot = tb.1 as i32;
+
+        let dytm = (y_fin - y_mid + 1) as Float;
+        let dytb = (y_fin - y_bot + 1) as Float;
+        let dymb = (y_mid - y_bot) as Float;
+
+        let dx0 = (tt.0 - tb.0) / dytb;
+        let dx1l = (tm.0 - tb.0) / dymb;
+        let dx1u = (tt.0 - tm.0) / dytm;
+        let dz0 = (tt.2 - tb.2) / dytb;
+        let dz1l = (tm.2 - tb.2) / dymb;
+        let dz1u = (tt.2 - tm.2) / dytm;
+        
+        let (mut x0, mut x1, mut z0, mut z1) = (tb.0, tb.0, tb.2, tb.2);
+        if y_mid == y_bot {
+            x1 = tm.0;
+            z1 = tm.2;
+        }
+        for y in tb.1 as i32..=y_fin {
+            //draw_line could be used but leads to slightly different results which in my opinion
+            //are a bit worse because of how floating point accuracy turns out
+            let mut curz;
+            let (x_start, x_fin, cdz);
+            if x1 > x0 {
+                x_start = x0 as i32;
+                x_fin = x1 as i32;
+                curz = z0;
+                cdz = (z1 - z0) / (x_fin - x_start + 1) as Float;
+            } else {
+                x_start = x1 as i32;
+                x_fin = x0 as i32;
+                curz = z1;
+                cdz = (z0 - z1) / (x_fin - x_start + 1) as Float;
+            }
+            for curx in x_start..=x_fin {
+                 self.plot(curx, y, curz, color);
+                 curz += cdz;
+            }
+
+            if y < y_mid {
+                x1 += dx1l;
+                z1 += dz1l
+            } else {
+                x1 += dx1u;
+                z1 += dz1u;
+            }
+            x0 += dx0;
+            z0 += dz0;
         }
     }
 

@@ -9,8 +9,8 @@ const RESOLUTION: usize = 20;
 pub fn add_circle(cx: Float, cy: Float, cz: Float, r: Float, edges: &mut Space) {
     for t in 0..RESOLUTION {
         //RESOLUTION should be reasonable enough that these type casts are fine
-        let t0 = (t as Float) / (RESOLUTION as Float) * std::f32::consts::TAU;
-        let t1 = ((t + 1) as Float) / (RESOLUTION as Float) * std::f32::consts::TAU;
+        let t0 = (t as Float) / (RESOLUTION as Float) * std::f64::consts::TAU;
+        let t1 = ((t + 1) as Float) / (RESOLUTION as Float) * std::f64::consts::TAU;
         let x0 = r * t0.cos() + cx;
         let y0 = r * t0.sin() + cy;
         let x1 = r * t1.cos() + cx;
@@ -122,8 +122,8 @@ fn sphere_points(x: Float, y: Float, z: Float, r: Float) -> Vec<Point> {
     for p in 0..RESOLUTION {
         for t in 0..=RESOLUTION - 1 {
             //cast should be fine as resolution is not stupid
-            let phi = (p as Float) / ((RESOLUTION - 1) as Float) * std::f32::consts::TAU;
-            let theta = (t as Float) / ((RESOLUTION - 1) as Float) * std::f32::consts::PI;
+            let phi = (p as Float) / ((RESOLUTION - 1) as Float) * std::f64::consts::TAU;
+            let theta = (t as Float) / ((RESOLUTION - 1) as Float) * std::f64::consts::PI;
             let px = r * theta.cos() + x;
             let py = r * theta.sin() * phi.cos() + y;
             let pz = r * theta.sin() * phi.sin() + z;
@@ -160,8 +160,8 @@ fn torus_points(x: Float, y: Float, z: Float, r1: Float, r2: Float) -> Vec<Point
     let mut out = Vec::with_capacity(RESOLUTION * RESOLUTION);
     for p in 0..RESOLUTION {
         for t in 0..RESOLUTION {
-            let phi = (p as Float) / (RESOLUTION as Float) * std::f32::consts::TAU;
-            let theta = (t as Float) / (RESOLUTION as Float) * std::f32::consts::TAU;
+            let phi = (p as Float) / (RESOLUTION as Float) * std::f64::consts::TAU;
+            let theta = (t as Float) / (RESOLUTION as Float) * std::f64::consts::TAU;
             let px = phi.cos() * (r1 * theta.cos() + r2) + x;
             let py = r1 * theta.sin() + y;
             let pz = phi.sin() * (r1 * theta.cos() + r2) + z;

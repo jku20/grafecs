@@ -56,7 +56,6 @@ use screen::{color::RGB8Color, Screen};
 
 const IMAGE_WIDTH: usize = 500;
 const IMAGE_HEIGHT: usize = 500;
-const LINE_COLOR: RGB8Color = RGB8Color::WHITE;
 
 lrlex_mod!("dwscript.l");
 lrpar_mod!("dwscript.y");
@@ -64,12 +63,12 @@ lrpar_mod!("dwscript.y");
 ///given a screen, a coordinate system/Modtrix, and a "good" draw function, the macro will draw
 ///the shape made with that draw function to the screen
 macro_rules! draw_to_screen {
-    ( $screen:expr, $sys:expr, $shape:expr, $color:expr ,$( $args:expr ),* ) => {
+    ( $screen:expr, $sys:expr, $shape:expr, $( $args:expr ),* ) => {
         {
             let mut f = Space::new();
             $shape($( $args ),*, &mut f);
             f.apply($sys);
-            Space::draw_space(&f, $color, $screen);
+            Space::draw_space(&f, $screen);
         }
     };
 }
@@ -111,7 +110,6 @@ fn eval<'a>(
                 scrn,
                 coord.last().unwrap(),
                 draw::add_line,
-                LINE_COLOR,
                 p1,
                 p2
             );
@@ -216,7 +214,6 @@ fn eval<'a>(
                 scrn,
                 coord.last().unwrap(),
                 draw::add_circle,
-                LINE_COLOR,
                 cx,
                 cy,
                 cz,
@@ -263,7 +260,6 @@ fn eval<'a>(
                 scrn,
                 coord.last().unwrap(),
                 draw::add_hermite,
-                LINE_COLOR,
                 x0,
                 y0,
                 x1,
@@ -314,7 +310,6 @@ fn eval<'a>(
                 scrn,
                 coord.last().unwrap(),
                 draw::add_bezier,
-                LINE_COLOR,
                 x0,
                 y0,
                 x1,
@@ -339,7 +334,6 @@ fn eval<'a>(
                 scrn,
                 coord.last().unwrap(),
                 draw::add_box,
-                LINE_COLOR,
                 args[0]?,
                 args[1]?,
                 args[2]?,
@@ -362,7 +356,6 @@ fn eval<'a>(
                 scrn,
                 coord.last().unwrap(),
                 draw::add_sphere,
-                LINE_COLOR,
                 args[0]?,
                 args[1]?,
                 args[2]?,
@@ -383,7 +376,6 @@ fn eval<'a>(
                 scrn,
                 coord.last().unwrap(),
                 draw::add_torus,
-                LINE_COLOR,
                 args[0]?,
                 args[1]?,
                 args[2]?,
@@ -392,7 +384,10 @@ fn eval<'a>(
             );
             Ok("")
         }
-        Expr::Clear { span: _span } => Ok(""),
+        Expr::Clear { span: _span } => {
+            scrn.clear();
+            Ok("")
+        }
         Expr::Push { span: _span } => {
             coord.push(coord.last().unwrap().clone());
             Ok("")

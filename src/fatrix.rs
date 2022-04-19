@@ -7,7 +7,7 @@ use crate::screen::{color::Color, Screen};
 use std::fmt::{self, Debug};
 
 //when Float is updated, make sure to update the below three lines as well
-pub type Float = f32;
+pub type Float = f64;
 
 ///The point is stored (x, y, z)
 pub type Point = (Float, Float, Float);
@@ -210,28 +210,21 @@ impl Space {
     }
 
     ///draws the lines currently in the space to a given screen
-    pub fn draw_space<T: Color>(space: &Space, color: T, s: &mut Screen<T>) {
+    pub fn draw_space<T: Color>(space: &Space, s: &mut Screen<T>) {
         space.lin_space.windows(2).step_by(2).for_each(|w| {
-            let p1 = (w[0][0] as i32, w[0][1] as i32);
-            let p2 = (w[1][0] as i32, w[1][1] as i32);
-            s.draw_line(p1, p2, color);
+            let p1 = (w[0][0], w[0][1], w[0][2]);
+            let p2 = (w[1][0], w[1][1], w[1][2]);
+            s.draw_line(p1, p2, T::random_color());
         });
         space.tri_space.windows(3).step_by(3).for_each(|w| {
             let view = (0.0, 0.0, 1.0);
-            let snorm = gmath::norm(
-                (w[0][0], w[0][1], w[0][2]),
-                (w[1][0], w[1][1], w[1][2]),
-                (w[2][0], w[2][1], w[2][2]),
-            );
+            let p1 = (w[0][0], w[0][1], w[0][2]);
+            let p2 = (w[1][0], w[1][1], w[1][2]);
+            let p3 = (w[2][0], w[2][1], w[2][2]);
+            let snorm = gmath::norm(p1, p2, p3);
 
             if gmath::dot(snorm, view) > 0.0 {
-                let p1 = (w[0][0] as i32, w[0][1] as i32);
-                let p2 = (w[1][0] as i32, w[1][1] as i32);
-                let p3 = (w[2][0] as i32, w[2][1] as i32);
-
-                s.draw_line(p1, p2, color);
-                s.draw_line(p2, p3, color);
-                s.draw_line(p3, p1, color);
+                s.draw_tri(p1, p2, p3, T::random_color());
             }
         });
     }

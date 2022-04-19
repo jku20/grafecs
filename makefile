@@ -6,6 +6,8 @@ build:
 	cargo build --release
 run:
 	cargo run --release data/script.dw
+test:
+	cargo run data/script.dw
 clean:
 	cargo clean
-.PHONY: all run clean dw
+.PHONY: all run clean dw test
