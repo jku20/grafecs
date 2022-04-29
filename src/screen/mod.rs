@@ -137,18 +137,42 @@ impl<T: Color> Screen<T> {
         let dist1 = tm.1 as i32 - y + 1;
         let dist2 = tt.1 as i32 - tm.1 as i32 + 1;
 
-        let dx0 = if dist0 > 0 { (tt.0 - tb.0) / dist0 as Float } else { 0.0 };
-        let mut dx1 = if dist1 > 0 { (tm.0 - tb.0) / dist1 as Float } else { 0.0 };
+        let dx0 = if dist0 > 0 {
+            (tt.0 - tb.0) / dist0 as Float
+        } else {
+            0.0
+        };
+        let mut dx1 = if dist1 > 0 {
+            (tm.0 - tb.0) / dist1 as Float
+        } else {
+            0.0
+        };
 
-        let dz0 = if dist0 > 0 { (tt.2 - tb.2) / dist0 as Float } else { 0.0 };
-        let mut dz1 = if dist1 > 0 { (tm.2 - tb.2) / dist1 as Float } else { 0.0 };
+        let dz0 = if dist0 > 0 {
+            (tt.2 - tb.2) / dist0 as Float
+        } else {
+            0.0
+        };
+        let mut dz1 = if dist1 > 0 {
+            (tm.2 - tb.2) / dist1 as Float
+        } else {
+            0.0
+        };
 
         let mut flip = false;
         while y <= tt.1 as i32 {
             if !flip && y >= tm.1 as i32 {
                 flip = true;
-                dx1 = if dist2 > 0 { (tt.0 - tm.0) / dist2 as Float } else { 0.0 };
-                dz1 = if dist2 > 0 { (tt.2 - tm.2) / dist2 as Float } else { 0.0 };
+                dx1 = if dist2 > 0 {
+                    (tt.0 - tm.0) / dist2 as Float
+                } else {
+                    0.0
+                };
+                dz1 = if dist2 > 0 {
+                    (tt.2 - tm.2) / dist2 as Float
+                } else {
+                    0.0
+                };
                 x1 = tm.0;
                 z1 = tm.2;
             }
@@ -166,7 +190,7 @@ impl<T: Color> Screen<T> {
                 z_end = z1;
             }
 
-            let delta_z = if x_end - x_start != 0 { 
+            let delta_z = if x_end - x_start != 0 {
                 (z_end - z_start) / (x_end - x_start + 1) as Float
             } else {
                 0.0
