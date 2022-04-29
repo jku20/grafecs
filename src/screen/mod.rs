@@ -126,6 +126,69 @@ impl<T: Color> Screen<T> {
             (tt, tm) = (tm, tt);
         }
 
+        //implementation based off of dw's to have less error
+        let mut x0 = tb.0;
+        let mut x1 = tb.0;
+        let mut z0 = tb.2;
+        let mut z1 = tb.2;
+        let mut y = tb.1 as i32;
+
+        let dist0 = tt.1 as i32 - y + 1;
+        let dist1 = tm.1 as i32 - y + 1;
+        let dist2 = tt.1 as i32 - tm.1 as i32 + 1;
+
+        let dx0 = if dist0 > 0 { (tt.0 - tb.0) / dist0 as Float } else { 0.0 };
+        let mut dx1 = if dist1 > 0 { (tm.0 - tb.0) / dist1 as Float } else { 0.0 };
+
+        let dz0 = if dist0 > 0 { (tt.2 - tb.2) / dist0 as Float } else { 0.0 };
+        let mut dz1 = if dist1 > 0 { (tm.2 - tb.2) / dist1 as Float } else { 0.0 };
+
+        let mut flip = false;
+        while y <= tt.1 as i32 {
+            if !flip && y >= tm.1 as i32 {
+                flip = true;
+                dx1 = if dist2 > 0 { (tt.0 - tm.0) / dist2 as Float } else { 0.0 };
+                dz1 = if dist2 > 0 { (tt.2 - tm.2) / dist2 as Float } else { 0.0 };
+                x1 = tm.0;
+                z1 = tm.2;
+            }
+
+            let (x_start, x_end, z_start, z_end);
+            if x0 > x1 {
+                x_start = x1 as i32;
+                x_end = x0 as i32;
+                z_start = z1;
+                z_end = z0;
+            } else {
+                x_start = x0 as i32;
+                x_end = x1 as i32;
+                z_start = z0;
+                z_end = z1;
+            }
+
+            let delta_z = if x_end - x_start != 0 { 
+                (z_end - z_start) / (x_end - x_start + 1) as Float
+            } else {
+                0.0
+            };
+
+            let mut z = z_start;
+            let mut x = x_start;
+            while x <= x_end {
+                self.plot(x, y, z, color);
+                z += delta_z;
+                x += 1;
+            }
+
+            x0 += dx0;
+            x1 += dx1;
+            z0 += dz0;
+            z1 += dz1;
+            y += 1;
+        }
+
+        //my implementation which has slightly more error
+        /*
         let y_fin = tt.1 as i32;
         let y_mid = tm.1 as i32;
         let y_bot = tb.1 as i32;
@@ -177,6 +240,7 @@ impl<T: Color> Screen<T> {
             x0 += dx0;
             z0 += dz0;
         }
+        */
     }
 
     pub fn byte_vec(&self) -> Vec<u8> {
