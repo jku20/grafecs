@@ -1,6 +1,6 @@
 //!functions to draw different shapes to a space
 
-use crate::fatrix::{Float, Point, Space};
+use crate::space::{Float, Point, Space};
 
 const RESOLUTION: usize = 20;
 

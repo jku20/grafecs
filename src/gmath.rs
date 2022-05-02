@@ -1,6 +1,6 @@
 //!misc math functions useful for graphics programming
 
-use crate::fatrix::{Float, Point};
+use crate::space::{Float, Point};
 
 pub fn dot(v1: Point, v2: Point) -> Float {
     v1.0 * v2.0 + v1.1 * v2.1 + v1.2 * v2.2

@@ -47,12 +47,12 @@ use lrlex::{lrlex_mod, DefaultLexeme};
 use lrpar::{lrpar_mod, NonStreamingLexer, Span};
 
 mod draw;
-mod fatrix;
 mod gmath;
 mod screen;
+mod space;
 
-use fatrix::{Float, Modtrix, Space};
-use screen::{color::RGB8Color, Screen};
+use screen::{RGB8Color, Screen};
+use space::{Float, Modtrix, Space};
 
 const IMAGE_WIDTH: usize = 500;
 const IMAGE_HEIGHT: usize = 500;

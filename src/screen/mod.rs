@@ -4,10 +4,10 @@
 use std::fs::File;
 use std::io::{self, BufWriter, Write};
 
-use crate::fatrix::{Float, Point};
+use crate::space::{Float, Point};
 
-pub mod color;
-pub use color::Color;
+mod color;
+pub use color::{Color, RGB8Color};
 
 ///the z axis is always quanitized for a computer
 ///this constatnt represents how many units one quantum of space is
