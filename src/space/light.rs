@@ -1,8 +1,8 @@
+use super::Point;
+use crate::screen::Color;
 ///A light (well technically a point linght source) but just called a light for simplicity becuase
 ///an ambient light just a single number and I don't think there are any other types of lights.
 use std::fmt::Debug;
-use super::Point;
-use crate::screen::Color;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Light<T: Color> {
@@ -12,9 +12,6 @@ pub struct Light<T: Color> {
 
 impl<T: Color> Light<T> {
     pub fn new(pos: Point, col: T) -> Self {
-        Self {
-            pos,
-            col,
-        }
+        Self { pos, col }
     }
 }

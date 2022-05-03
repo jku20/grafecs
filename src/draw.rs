@@ -1,7 +1,7 @@
 //!functions to draw different shapes to a space
 
-use crate::space::{Float, Point, Space};
 use crate::screen::Color;
+use crate::space::{Float, Point, Space};
 
 const RESOLUTION: usize = 100;
 
@@ -91,7 +91,15 @@ pub fn add_bezier<T: Color>(
 
 ///adds a box to the given fatrix given the front top left corner x, y, z and a width, height, and
 ///depth
-pub fn add_box<T: Color>(x: Float, y: Float, z: Float, w: Float, h: Float, d: Float, edges: &mut Space<T>) {
+pub fn add_box<T: Color>(
+    x: Float,
+    y: Float,
+    z: Float,
+    w: Float,
+    h: Float,
+    d: Float,
+    edges: &mut Space<T>,
+) {
     //front face
     edges.add_tri((x, y, z), (x, y - h, z), (x + w, y - h, z));
     edges.add_tri((x, y, z), (x + w, y - h, z), (x + w, y, z));
@@ -175,7 +183,14 @@ fn torus_points(x: Float, y: Float, z: Float, r1: Float, r2: Float) -> Vec<Point
 
 ///adds a torus to a fatrix given the center point (x, y, z) the radius of a cross section, r1, and
 ///the radius from the center point to the outer edge, r2
-pub fn add_torus<T: Color>(x: Float, y: Float, z: Float, r1: Float, r2: Float, edges: &mut Space<T>) {
+pub fn add_torus<T: Color>(
+    x: Float,
+    y: Float,
+    z: Float,
+    r1: Float,
+    r2: Float,
+    edges: &mut Space<T>,
+) {
     let p = torus_points(x, y, z, r1, r2);
     let n = p.len();
     for i in 0..RESOLUTION {

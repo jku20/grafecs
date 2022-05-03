@@ -64,11 +64,7 @@ impl Color for RGB8Color {
         let green = ng.min(Self::max_val() as Float).max(0.0) as Uint;
         let blue = nb.min(Self::max_val() as Float).max(0.0) as Uint;
 
-        Self {
-            red,
-            green,
-            blue,
-        }
+        Self { red, green, blue }
     }
 }
 
@@ -92,24 +88,14 @@ impl Add<Self> for RGB8Color {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        let red = self.red().checked_add(rhs.red())
-            .unwrap_or(Self::max_val())
-            .min(Self::max_val())
-            as u8;
-        let green = self.green().checked_add(rhs.green())
-            .unwrap_or(Self::max_val())
-            .min(Self::max_val())
-            as u8;
-        let blue = self.blue().checked_add(rhs.blue())
-            .unwrap_or(Self::max_val())
-            .min(Self::max_val())
-            as u8;
+        let red = self.red().saturating_add(rhs.red()).min(Self::max_val()) as u8;
+        let green = self
+            .green()
+            .saturating_add(rhs.green())
+            .min(Self::max_val()) as u8;
+        let blue = self.blue().saturating_add(rhs.blue()).min(Self::max_val()) as u8;
 
-        Self {
-            red,
-            green,
-            blue,
-        }
+        Self { red, green, blue }
     }
 }
 
@@ -117,20 +103,10 @@ impl Sub<Self> for RGB8Color {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        let red = self.red().checked_sub(rhs.red())
-            .unwrap_or(0)
-            as u8;
-        let green = self.green().checked_add(rhs.green())
-            .unwrap_or(0)
-            as u8;
-        let blue = self.blue().checked_add(rhs.blue())
-            .unwrap_or(0)
-            as u8;
+        let red = self.red().saturating_sub(rhs.red()) as u8;
+        let green = self.green().saturating_sub(rhs.green()) as u8;
+        let blue = self.blue().saturating_sub(rhs.blue()) as u8;
 
-        Self {
-            red,
-            green,
-            blue,
-        }
+        Self { red, green, blue }
     }
 }

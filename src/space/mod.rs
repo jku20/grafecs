@@ -4,7 +4,7 @@ mod modtrix;
 pub use modtrix::Modtrix;
 
 mod space;
-pub use space::{Space, draw_space};
+pub use space::{draw_space, Space};
 
 mod light;
 pub use light::Light;

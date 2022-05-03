@@ -2,7 +2,7 @@
 ///you write its stuff to a screen
 use std::fmt::Debug;
 
-use super::{Float, Modtrix, Point, Light};
+use super::{Float, Light, Modtrix, Point};
 use crate::gmath;
 use crate::screen::{Color, Screen};
 
@@ -118,21 +118,26 @@ impl<T: Color> Space<T> {
 }
 
 fn phong_color<T: Color>(p1: Point, p2: Point, p3: Point, s: &Space<T>) -> T {
+    use gmath::{add, dot, norm, normalize, scale, sub};
+
     const DISPERSION: Float = 2.0;
     const THIRD: Float = 1.0 / 3.0;
 
     let mut color = s.ambient_light.mult(s.ambient_reflection);
-    let cm = gmath::scale(THIRD, gmath::add(gmath::add(p1, p2), p3));
+    let cm = scale(THIRD, add(add(p1, p2), p3));
 
     for l in &s.lights {
         //diffuse
-        let tol = gmath::normalize(gmath::sub(l.pos, cm));
-        let nrm = gmath::normalize(gmath::norm(p1, p2, p3));
-        let d = gmath::dot(nrm, tol);
-        color += l.col.mult(gmath::scale(d, s.diffuse_reflection));
+        let tol = normalize(sub(l.pos, cm));
+        let nrm = normalize(norm(p1, p2, p3));
+        let d = dot(nrm, tol).max(0.0);
+        color += l.col.mult(scale(d, s.diffuse_reflection));
         //specular
-        let r = gmath::sub(gmath::scale(2.0 * d, nrm), tol);
-        let c = gmath::scale(gmath::dot(r, s.camera).powf(DISPERSION), s.specular_reflection);
+        let r = sub(scale(2.0 * d, nrm), tol);
+        let c = scale(
+            dot(r, s.camera).max(0.0).powf(DISPERSION),
+            s.specular_reflection,
+        );
         color += l.col.mult(c);
     }
     color

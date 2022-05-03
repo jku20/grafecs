@@ -52,7 +52,7 @@ mod screen;
 mod space;
 
 use screen::{RGB8Color, Screen};
-use space::{Float, Modtrix, Space, Light};
+use space::{Float, Light, Modtrix, Space};
 
 const IMAGE_WIDTH: usize = 500;
 const IMAGE_HEIGHT: usize = 500;
@@ -207,7 +207,16 @@ fn eval<'a>(
             let r = eval(lexer, *r, coord, spc, scrn)?
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse num"))?;
-            draw_to_screen!(scrn, spc, coord.last().unwrap(), draw::add_circle, cx, cy, cz, r);
+            draw_to_screen!(
+                scrn,
+                spc,
+                coord.last().unwrap(),
+                draw::add_circle,
+                cx,
+                cy,
+                cz,
+                r
+            );
             Ok("")
         }
         Expr::Hermite {
