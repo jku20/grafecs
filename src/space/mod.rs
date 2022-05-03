@@ -4,7 +4,10 @@ mod modtrix;
 pub use modtrix::Modtrix;
 
 mod space;
-pub use space::Space;
+pub use space::{Space, draw_space};
+
+mod light;
+pub use light::Light;
 
 //when Float is updated, make sure to update the below three lines as well
 pub type Float = f64;

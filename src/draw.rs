@@ -1,12 +1,13 @@
 //!functions to draw different shapes to a space
 
 use crate::space::{Float, Point, Space};
+use crate::screen::Color;
 
-const RESOLUTION: usize = 20;
+const RESOLUTION: usize = 100;
 
 ///Adds a circle to a given fatrix
 ///circle defined by its center point (cx, cy, cz) and a radius, r
-pub fn add_circle(cx: Float, cy: Float, cz: Float, r: Float, edges: &mut Space) {
+pub fn add_circle<T: Color>(cx: Float, cy: Float, cz: Float, r: Float, edges: &mut Space<T>) {
     for t in 0..RESOLUTION {
         //RESOLUTION should be reasonable enough that these type casts are fine
         let t0 = (t as Float) / (RESOLUTION as Float) * std::f64::consts::TAU;
@@ -21,7 +22,7 @@ pub fn add_circle(cx: Float, cy: Float, cz: Float, r: Float, edges: &mut Space) 
 
 ///Adds a hermite curve defined by a start and end point and slopes coming out of or into those
 ///points
-pub fn add_hermite(
+pub fn add_hermite<T: Color>(
     x0: Float,
     y0: Float,
     x1: Float,
@@ -30,7 +31,7 @@ pub fn add_hermite(
     ry0: Float,
     rx1: Float,
     ry1: Float,
-    edges: &mut Space,
+    edges: &mut Space<T>,
 ) {
     let ax = 2.0 * x0 - 2.0 * x1 + rx0 + rx1;
     let bx = -3.0 * x0 + 3.0 * x1 - 2.0 * rx0 - rx1;
@@ -55,7 +56,7 @@ pub fn add_hermite(
 
 ///adds bezier curve to fatrix with (x0, y0) and (x3, y3) as start and end points and the other two
 ///points control points
-pub fn add_bezier(
+pub fn add_bezier<T: Color>(
     x0: Float,
     y0: Float,
     x1: Float,
@@ -64,7 +65,7 @@ pub fn add_bezier(
     y2: Float,
     x3: Float,
     y3: Float,
-    edges: &mut Space,
+    edges: &mut Space<T>,
 ) {
     let ax = -x0 + 3.0 * x1 - 3.0 * x2 + x3;
     let bx = 3.0 * x0 - 6.0 * x1 + 3.0 * x2;
@@ -90,7 +91,7 @@ pub fn add_bezier(
 
 ///adds a box to the given fatrix given the front top left corner x, y, z and a width, height, and
 ///depth
-pub fn add_box(x: Float, y: Float, z: Float, w: Float, h: Float, d: Float, edges: &mut Space) {
+pub fn add_box<T: Color>(x: Float, y: Float, z: Float, w: Float, h: Float, d: Float, edges: &mut Space<T>) {
     //front face
     edges.add_tri((x, y, z), (x, y - h, z), (x + w, y - h, z));
     edges.add_tri((x, y, z), (x + w, y - h, z), (x + w, y, z));
@@ -134,7 +135,7 @@ fn sphere_points(x: Float, y: Float, z: Float, r: Float) -> Vec<Point> {
 }
 
 ///adds a sphere to a fatrix given a center (x, y, z) and a radius r
-pub fn add_sphere(x: Float, y: Float, z: Float, r: Float, edges: &mut Space) {
+pub fn add_sphere<T: Color>(x: Float, y: Float, z: Float, r: Float, edges: &mut Space<T>) {
     let p = sphere_points(x, y, z, r);
     let n = p.len();
     for i in 0..RESOLUTION {
@@ -174,7 +175,7 @@ fn torus_points(x: Float, y: Float, z: Float, r1: Float, r2: Float) -> Vec<Point
 
 ///adds a torus to a fatrix given the center point (x, y, z) the radius of a cross section, r1, and
 ///the radius from the center point to the outer edge, r2
-pub fn add_torus(x: Float, y: Float, z: Float, r1: Float, r2: Float, edges: &mut Space) {
+pub fn add_torus<T: Color>(x: Float, y: Float, z: Float, r1: Float, r2: Float, edges: &mut Space<T>) {
     let p = torus_points(x, y, z, r1, r2);
     let n = p.len();
     for i in 0..RESOLUTION {
@@ -190,6 +191,6 @@ pub fn add_torus(x: Float, y: Float, z: Float, r1: Float, r2: Float, edges: &mut
 }
 
 ///simple wrapper function for add_line
-pub fn add_line(p: Point, q: Point, edges: &mut Space) {
+pub fn add_line<T: Color>(p: Point, q: Point, edges: &mut Space<T>) {
     edges.add_line(p, q);
 }

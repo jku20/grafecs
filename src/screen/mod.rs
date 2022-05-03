@@ -210,61 +210,6 @@ impl<T: Color> Screen<T> {
             z1 += dz1;
             y += 1;
         }
-
-        //my implementation which has slightly more error
-        /*
-        let y_fin = tt.1 as i32;
-        let y_mid = tm.1 as i32;
-        let y_bot = tb.1 as i32;
-
-        let dytm = (y_fin - y_mid + 1) as Float;
-        let dytb = (y_fin - y_bot + 1) as Float;
-        let dymb = (y_mid - y_bot) as Float;
-
-        let dx0 = (tt.0 - tb.0) / dytb;
-        let dx1l = (tm.0 - tb.0) / dymb;
-        let dx1u = (tt.0 - tm.0) / dytm;
-        let dz0 = (tt.2 - tb.2) / dytb;
-        let dz1l = (tm.2 - tb.2) / dymb;
-        let dz1u = (tt.2 - tm.2) / dytm;
-
-        let (mut x0, mut x1, mut z0, mut z1) = (tb.0, tb.0, tb.2, tb.2);
-        if y_mid == y_bot {
-            x1 = tm.0;
-            z1 = tm.2;
-        }
-        for y in tb.1 as i32..=y_fin {
-            //draw_line could be used but leads to slightly different results which in my opinion
-            //are a bit worse because of how floating point accuracy turns out
-            let mut curz;
-            let (x_start, x_fin, cdz);
-            if x1 > x0 {
-                x_start = x0 as i32;
-                x_fin = x1 as i32;
-                curz = z0;
-                cdz = (z1 - z0) / (x_fin - x_start + 1) as Float;
-            } else {
-                x_start = x1 as i32;
-                x_fin = x0 as i32;
-                curz = z1;
-                cdz = (z0 - z1) / (x_fin - x_start + 1) as Float;
-            }
-            for curx in x_start..=x_fin {
-                self.plot(curx, y, curz, color);
-                curz += cdz;
-            }
-
-            if y < y_mid {
-                x1 += dx1l;
-                z1 += dz1l
-            } else {
-                x1 += dx1u;
-                z1 += dz1u;
-            }
-            x0 += dx0;
-            z0 += dz0;
-        }
-        */
     }
 
     pub fn byte_vec(&self) -> Vec<u8> {
@@ -281,7 +226,7 @@ impl<T: Color> Screen<T> {
                 }
                 //256 is the magic number for ppm files
                 //this should also mean the below never panics
-                if max_val < 256 {
+                if max_val <= 255 {
                     out.extend_from_slice(&[c.red() as u8, c.green() as u8, c.blue() as u8]);
                 } else {
                     out.extend_from_slice(&c.red().to_le_bytes());

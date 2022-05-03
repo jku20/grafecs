@@ -2,23 +2,35 @@
 ///you write its stuff to a screen
 use std::fmt::Debug;
 
-use super::{Float, Modtrix, Point};
+use super::{Float, Modtrix, Point, Light};
 use crate::gmath;
 use crate::screen::{Color, Screen};
 
 #[derive(Clone, Debug)]
-pub struct Space {
+pub struct Space<T: Color> {
     lin_space: Vec<[Float; 4]>,
     tri_space: Vec<[Float; 4]>,
+    lights: Vec<Light<T>>,
+    ambient_light: T,
+    ambient_reflection: (Float, Float, Float),
+    diffuse_reflection: (Float, Float, Float),
+    specular_reflection: (Float, Float, Float),
+    camera: Point,
 }
 
-impl Space {
+impl<T: Color> Space<T> {
     ///creates a space with a certain starting capacity in both the line and trianlge space
     ///both of these starting capacities are the same
     pub fn with_capacity(columns: usize) -> Self {
         Self {
             lin_space: Vec::with_capacity(columns),
             tri_space: Vec::with_capacity(columns),
+            lights: Vec::with_capacity(columns),
+            ambient_light: T::default(),
+            ambient_reflection: (0.0, 0.0, 0.0),
+            diffuse_reflection: (0.0, 0.0, 0.0),
+            specular_reflection: (0.0, 0.0, 0.0),
+            camera: (0.0, 0.0, 1.0),
         }
     }
 
@@ -40,6 +52,38 @@ impl Space {
         self.tri_space.push([p.0, p.1, p.2, 1.0]);
         self.tri_space.push([q.0, q.1, q.2, 1.0]);
         self.tri_space.push([r.0, r.1, r.2, 1.0]);
+    }
+
+    pub fn add_light(&mut self, l: Light<T>) {
+        self.lights.push(l);
+    }
+
+    pub fn set_ambient_light(&mut self, color: T) {
+        self.ambient_light = color;
+    }
+
+    pub fn set_ambient_reflection(&mut self, k: (Float, Float, Float)) {
+        self.ambient_reflection = k;
+    }
+
+    pub fn set_diffuse_reflection(&mut self, k: (Float, Float, Float)) {
+        self.diffuse_reflection = k;
+    }
+
+    pub fn set_specular_reflection(&mut self, k: (Float, Float, Float)) {
+        self.specular_reflection = k;
+    }
+
+    pub fn set_camera(&mut self, p: Point) {
+        self.camera = p;
+    }
+
+    pub fn clear_lines(&mut self) {
+        self.lin_space.clear();
+    }
+
+    pub fn clear_tris(&mut self) {
+        self.tri_space.clear();
     }
 
     ///apply tranformation stored in a Modtrix
@@ -71,24 +115,46 @@ impl Space {
         self.lin_space = mult(&self.lin_space);
         self.tri_space = mult(&self.tri_space);
     }
+}
 
-    ///draws the lines currently in the space to a given screen
-    pub fn draw_space<T: Color>(space: &Space, s: &mut Screen<T>) {
-        space.lin_space.windows(2).step_by(2).for_each(|w| {
-            let p1 = (w[0][0], w[0][1], w[0][2]);
-            let p2 = (w[1][0], w[1][1], w[1][2]);
-            s.draw_line(p1, p2, T::random_color());
-        });
-        space.tri_space.windows(3).step_by(3).for_each(|w| {
-            let view = (0.0, 0.0, 1.0);
-            let p1 = (w[0][0], w[0][1], w[0][2]);
-            let p2 = (w[1][0], w[1][1], w[1][2]);
-            let p3 = (w[2][0], w[2][1], w[2][2]);
-            let snorm = gmath::norm(p1, p2, p3);
+fn phong_color<T: Color>(p1: Point, p2: Point, p3: Point, s: &Space<T>) -> T {
+    const DISPERSION: Float = 2.0;
+    const THIRD: Float = 1.0 / 3.0;
 
-            if gmath::dot(snorm, view) > 0.0 {
-                s.draw_tri(p1, p2, p3, T::random_color());
-            }
-        });
+    let mut color = s.ambient_light.mult(s.ambient_reflection);
+    let cm = gmath::scale(THIRD, gmath::add(gmath::add(p1, p2), p3));
+
+    for l in &s.lights {
+        //diffuse
+        let tol = gmath::normalize(gmath::sub(l.pos, cm));
+        let nrm = gmath::normalize(gmath::norm(p1, p2, p3));
+        let d = gmath::dot(nrm, tol);
+        color += l.col.mult(gmath::scale(d, s.diffuse_reflection));
+        //specular
+        let r = gmath::sub(gmath::scale(2.0 * d, nrm), tol);
+        let c = gmath::scale(gmath::dot(r, s.camera).powf(DISPERSION), s.specular_reflection);
+        color += l.col.mult(c);
     }
+    color
+}
+
+///draws the lines currently in the space to a given screen
+//TODO: figure out if the arguments both have to have type U
+pub fn draw_space<U: Color>(space: &Space<U>, s: &mut Screen<U>) {
+    space.lin_space.windows(2).step_by(2).for_each(|w| {
+        let p1 = (w[0][0], w[0][1], w[0][2]);
+        let p2 = (w[1][0], w[1][1], w[1][2]);
+        s.draw_line(p1, p2, U::random_color());
+    });
+    space.tri_space.windows(3).step_by(3).for_each(|w| {
+        let view = (0.0, 0.0, 1.0);
+        let p1 = (w[0][0], w[0][1], w[0][2]);
+        let p2 = (w[1][0], w[1][1], w[1][2]);
+        let p3 = (w[2][0], w[2][1], w[2][2]);
+        let snorm = gmath::norm(p1, p2, p3);
+
+        if gmath::dot(snorm, view) > 0.0 {
+            s.draw_tri(p1, p2, p3, phong_color(p1, p2, p3, space));
+        }
+    });
 }

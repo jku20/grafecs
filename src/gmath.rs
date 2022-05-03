@@ -16,3 +16,21 @@ pub fn norm(p1: Point, p2: Point, p3: Point) -> Point {
         a.0 * b.1 - a.1 * b.0,
     )
 }
+
+pub fn normalize(p: Point) -> Point {
+    let rat = 1.0 / (p.0 * p.0 + p.1 * p.1 + p.2 * p.2).sqrt();
+    (p.0 * rat, p.1 * rat, p.2 * rat)
+}
+
+///not true vector math but these are used enough that these utility functions are worth while
+pub fn add(p1: Point, p2: Point) -> Point {
+    (p1.0 + p2.0, p1.1 + p2.1, p1.2 + p2.2)
+}
+
+pub fn sub(p1: Point, p2: Point) -> Point {
+    (p1.0 - p2.0, p1.1 - p2.1, p1.2 - p2.2)
+}
+
+pub fn scale(f: Float, p: Point) -> Point {
+    (f * p.0, f * p.1, f * p.2)
+}
