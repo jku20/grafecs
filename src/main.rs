@@ -42,9 +42,13 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::{self, Command, Stdio};
 
-use dwscript_y::Expr;
 use lrlex::{lrlex_mod, DefaultLexeme};
 use lrpar::{lrpar_mod, NonStreamingLexer, Span};
+
+lrlex_mod!("dwscript.l");
+lrpar_mod!("dwscript.y");
+
+use dwscript_y::Expr;
 
 mod draw;
 mod gmath;
@@ -57,8 +61,55 @@ use space::{Float, Light, Modtrix, Space};
 const IMAGE_WIDTH: usize = 500;
 const IMAGE_HEIGHT: usize = 500;
 
-lrlex_mod!("dwscript.l");
-lrpar_mod!("dwscript.y");
+fn run() -> Result<(), Box<dyn Error>> {
+    let args: Vec<String> = env::args().collect();
+    let script = fs::read_to_string(&args.get(1).ok_or("No Input File Given")?)?;
+
+    let lexerdef = dwscript_l::lexerdef();
+    let lexer = lexerdef.lexer(script.trim());
+    let (res, errs) = dwscript_y::parse(&lexer);
+
+    for e in errs {
+        println!("{}", e.pp(&lexer, &dwscript_y::token_epp));
+    }
+    if let Some(Ok(r)) = res {
+        let mut coords = vec![Modtrix::IDENT];
+        let mut scrn = Screen::<RGB8Color>::with_size(IMAGE_WIDTH, IMAGE_HEIGHT);
+        //adding stuff to space
+        let mut spc = Space::new();
+        spc.set_ambient_light((50, 50, 50).into());
+        let light = Light::new((5000.0, 7500.0, 10000.0), (0, 255, 255).into());
+        spc.add_light(light);
+        spc.set_ambient_reflection((0.1, 0.1, 0.1));
+        spc.set_diffuse_reflection((0.5, 0.5, 0.5));
+        spc.set_specular_reflection((0.5, 0.5, 0.5));
+        spc.set_camera((0.0, 0.0, 1.0));
+
+        if let Err((span, msg)) = eval(&lexer, r, &mut coords, &mut spc, &mut scrn) {
+            let ((line, col), _) = lexer.line_col(span);
+            eprintln!(
+                "Error parsing scriptat line {} column {}, '{}' {}.",
+                line,
+                col,
+                lexer.span_str(span),
+                msg,
+            );
+        }
+    }
+    Ok(())
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    match run() {
+        Err(e) => {
+            eprintln!("{}", e);
+            process::exit(1);
+        }
+        Ok(_) => {
+            process::exit(0);
+        }
+    }
+}
 
 ///given a screen, a coordinate system/Modtrix, and a "good" draw function, the macro will draw
 ///the shape made with that draw function to the screen
@@ -75,8 +126,7 @@ macro_rules! draw_to_screen {
 }
 
 ///Evaluates the AST built by the parser
-//TODO: move to own parser module
-fn eval<'a>(
+pub fn eval<'a>(
     lexer: &'a dyn NonStreamingLexer<DefaultLexeme, u32>,
     e: Expr,
     coord: &mut Vec<Modtrix>,
@@ -122,7 +172,7 @@ fn eval<'a>(
                         .map_err(|_| (span, "input not a number"))
                 })
                 .collect::<Vec<Result<_, _>>>();
-            let sm = scale_matrix!(nums[0]?, nums[1]?, nums[2]?);
+            let sm = space::scale_matrix!(nums[0]?, nums[1]?, nums[2]?);
             Modtrix::multr(coord.last_mut().unwrap(), &sm);
             Ok("")
         }
@@ -135,7 +185,7 @@ fn eval<'a>(
                         .map_err(|_| (span, "input not a number"))
                 })
                 .collect::<Vec<Result<_, _>>>();
-            let mm = move_matrix!(nums[0]?, nums[1]?, nums[2]?);
+            let mm = space::move_matrix!(nums[0]?, nums[1]?, nums[2]?);
             Modtrix::multr(coord.last_mut().unwrap(), &mm);
             Ok("")
         }
@@ -145,9 +195,9 @@ fn eval<'a>(
                 .parse::<Float>()
                 .map_err(|_| (span, "cannot parse angle of rotation"))?;
             let rm = match a {
-                "x" => rotx_matrix!(t),
-                "y" => roty_matrix!(t),
-                "z" => rotz_matrix!(t),
+                "x" => space::rotx_matrix!(t),
+                "y" => space::roty_matrix!(t),
+                "z" => space::rotz_matrix!(t),
                 _ => return Err((span, "cannot parse axis")),
             };
             Modtrix::multr(coord.last_mut().unwrap(), &rm);
@@ -402,55 +452,5 @@ fn eval<'a>(
         Expr::Num { span } => Ok(lexer.span_str(span)),
         Expr::Axis { span } => Ok(lexer.span_str(span)),
         Expr::File { span } => Ok(lexer.span_str(span)),
-    }
-}
-
-fn run() -> Result<(), Box<dyn Error>> {
-    let args: Vec<String> = env::args().collect();
-    let script = fs::read_to_string(&args.get(1).ok_or("No Input File Given")?)?;
-
-    let lexerdef = dwscript_l::lexerdef();
-    let lexer = lexerdef.lexer(script.trim());
-    let (res, errs) = dwscript_y::parse(&lexer);
-
-    for e in errs {
-        println!("{}", e.pp(&lexer, &dwscript_y::token_epp));
-    }
-    if let Some(Ok(r)) = res {
-        let mut coords = vec![Modtrix::IDENT];
-        let mut scrn = Screen::<RGB8Color>::with_size(IMAGE_WIDTH, IMAGE_HEIGHT);
-        //adding stuff to space
-        let mut spc = Space::new();
-        spc.set_ambient_light((50, 50, 50).into());
-        let light = Light::new((5000.0, 7500.0, 10000.0), (0, 255, 255).into());
-        spc.add_light(light);
-        spc.set_ambient_reflection((0.1, 0.1, 0.1));
-        spc.set_diffuse_reflection((0.5, 0.5, 0.5));
-        spc.set_specular_reflection((0.5, 0.5, 0.5));
-        spc.set_camera((0.0, 0.0, 1.0));
-
-        if let Err((span, msg)) = eval(&lexer, r, &mut coords, &mut spc, &mut scrn) {
-            let ((line, col), _) = lexer.line_col(span);
-            eprintln!(
-                "Error parsing scriptat line {} column {}, '{}' {}.",
-                line,
-                col,
-                lexer.span_str(span),
-                msg,
-            );
-        }
-    }
-    Ok(())
-}
-
-fn main() -> Result<(), Box<dyn Error>> {
-    match run() {
-        Err(e) => {
-            eprintln!("{}", e);
-            process::exit(1);
-        }
-        Ok(_) => {
-            process::exit(0);
-        }
     }
 }

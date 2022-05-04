@@ -128,3 +128,5 @@ macro_rules! roty_matrix {
         ])
     }};
 }
+
+pub use {move_matrix, rotx_matrix, roty_matrix, rotz_matrix, scale_matrix};
