@@ -3,7 +3,7 @@
 use crate::screen::Color;
 use crate::space::{Float, Point, Space};
 
-const RESOLUTION: usize = 20;
+const RESOLUTION: usize = 100;
 
 ///Adds a circle to a given fatrix
 ///circle defined by its center point (cx, cy, cz) and a radius, r

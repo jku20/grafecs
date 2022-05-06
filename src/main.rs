@@ -78,17 +78,11 @@ fn run() -> Result<(), Box<dyn Error>> {
         //adding stuff to space
         let mut spc = Space::new();
         spc.set_ambient_light((100, 100, 100).into());
-        let light = Light::new((250.0, -700.0, 0.0), (150, 150, 150).into());
-        spc.add_light(light);
-        let light = Light::new((250.0, 700.0, 0.0), (150, 150, 150).into());
-        spc.add_light(light);
-        let light = Light::new((100.0, 400.0, 100.0), (150, 0, 0).into());
-        spc.add_light(light);
-        let light = Light::new((210.0, 250.0, 100.0), (0, 80, 80).into());
+        let light = Light::new((5000.0, 7500.0, 10000.0), (0, 255, 255).into());
         spc.add_light(light);
         spc.set_ambient_reflection((0.1, 0.1, 0.1));
         spc.set_diffuse_reflection((0.5, 0.5, 0.5));
-        spc.set_specular_reflection((0.8, 0.8, 0.8));
+        spc.set_specular_reflection((0.5, 0.5, 0.5));
         spc.set_camera((0.0, 0.0, 1.0));
 
         if let Err((span, msg)) = eval(&lexer, r, &mut coords, &mut spc, &mut scrn) {
