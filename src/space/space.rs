@@ -130,12 +130,12 @@ fn phong_color<T: Color>(p1: Point, p2: Point, p3: Point, s: &Space<T>) -> T {
         //diffuse
         let tol = normalize(sub(l.pos, cm));
         let nrm = normalize(norm(p1, p2, p3));
-        let d = dot(nrm, tol).max(0.0);
+        let d = dot(nrm, tol);
         color += l.col.mult(scale(d, s.diffuse_reflection));
         //specular
         let r = sub(scale(2.0 * d, nrm), tol);
         let c = scale(
-            dot(r, s.camera).max(0.0).powf(DISPERSION),
+            dot(r, normalize(s.camera)).max(0.0).powf(DISPERSION),
             s.specular_reflection,
         );
         color += l.col.mult(c);
