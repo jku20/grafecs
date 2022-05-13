@@ -1,6 +1,8 @@
 ///A space where you can add lines and triangles and lights
 ///you write its stuff to a screen
 use std::fmt::Debug;
+use std::sync::Arc;
+use rayon::prelude::*;
 
 use super::{Float, Light, Modtrix, Point};
 use crate::gmath;
@@ -117,7 +119,7 @@ impl<T: Color> Space<T> {
     }
 }
 
-fn phong_color<T: Color>(p1: Point, p2: Point, p3: Point, s: &Space<T>) -> T {
+fn phong_color<T: Color>(p1: Point, p2: Point, p3: Point, s: Arc<&Space<T>>) -> T {
     use gmath::{add, dot, norm, normalize, scale, sub};
 
     const DISPERSION: Float = 2.0;
@@ -152,17 +154,20 @@ pub fn draw_space<U: Color>(space: &Space<U>, s: &mut Screen<U>) {
         s.draw_line(p1, p2, U::random_color());
     });
     let view = space.camera;
-    let t = space.tri_space.windows(3).step_by(3).filter(|w| {
+    let aspace = Arc::new(space);
+    let t: Vec<_> = space.tri_space.par_windows(3).step_by(3).filter_map(|w| {
         let p1 = (w[0][0], w[0][1], w[0][2]);
         let p2 = (w[1][0], w[1][1], w[1][2]);
         let p3 = (w[2][0], w[2][1], w[2][2]);
         let snorm = gmath::norm(p1, p2, p3);
-        gmath::dot(snorm, view) > 0.0
-    });
-    t.for_each(|w| {
-        let p1 = (w[0][0], w[0][1], w[0][2]);
-        let p2 = (w[1][0], w[1][1], w[1][2]);
-        let p3 = (w[2][0], w[2][1], w[2][2]);
-        s.draw_tri(p1, p2, p3, phong_color(p1, p2, p3, space))
+        if gmath::dot(snorm, view) > 0.0 {
+            Some((p1, p2, p3, phong_color(p1, p2, p3, aspace.clone())))
+        } else {
+            None
+        }
+    }).collect();
+
+    t.iter().for_each(|&(p1, p2, p3, c)| {
+        s.draw_tri(p1, p2, p3, c)
     });
 }

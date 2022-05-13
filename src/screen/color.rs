@@ -11,7 +11,7 @@ type Uint = u8;
 ///A trait implemented by structs storing one pixel's color is stored.
 ///As this project is meant only to write to the ppm format, colors
 ///should be `u16`s as that is the maximum color value of that format.
-pub trait Color: Debug + Default + Clone + Copy + Add + AddAssign + Sub {
+pub trait Color: Debug + Default + Clone + Copy + Add + AddAssign + Sub + Send + Sync {
     fn red(&self) -> Uint;
     fn blue(&self) -> Uint;
     fn green(&self) -> Uint;
