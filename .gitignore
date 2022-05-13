@@ -1,2 +1,6 @@
 /target
 *.png
+/vendor
+/gallery_scripts
+/imgs
+/data
