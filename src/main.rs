@@ -61,10 +61,7 @@ use space::{Float, Light, Modtrix, Space};
 const IMAGE_WIDTH: usize = 500;
 const IMAGE_HEIGHT: usize = 500;
 
-fn run() -> Result<(), Box<dyn Error>> {
-    let args: Vec<String> = env::args().collect();
-    let script = fs::read_to_string(&args.get(1).ok_or("No Input File Given")?)?;
-
+fn run(script: &str) -> Result<(), Box<dyn Error>> {
     let lexerdef = dwscript_l::lexerdef();
     let lexer = lexerdef.lexer(script.trim());
     let (res, errs) = dwscript_y::parse(&lexer);
@@ -100,7 +97,10 @@ fn run() -> Result<(), Box<dyn Error>> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    match run() {
+    let args: Vec<String> = env::args().collect();
+    let script = fs::read_to_string(&args.get(1).ok_or("No Input File Given")?)?;
+
+    match run(&script) {
         Err(e) => {
             eprintln!("{}", e);
             process::exit(1);
