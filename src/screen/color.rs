@@ -60,9 +60,9 @@ impl Color for RGB8Color {
         let ng = kg * self.green() as Float;
         let nb = kb * self.blue() as Float;
 
-        let red = nr.min(Self::max_val() as Float).max(0.0) as Uint;
-        let green = ng.min(Self::max_val() as Float).max(0.0) as Uint;
-        let blue = nb.min(Self::max_val() as Float).max(0.0) as Uint;
+        let red = nr.min(Self::max_val() as Float).max(0.0) as u8;
+        let green = ng.min(Self::max_val() as Float).max(0.0) as u8;
+        let blue = nb.min(Self::max_val() as Float).max(0.0) as u8;
 
         Self { red, green, blue }
     }

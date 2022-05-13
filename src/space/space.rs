@@ -151,15 +151,18 @@ pub fn draw_space<U: Color>(space: &Space<U>, s: &mut Screen<U>) {
         let p2 = (w[1][0], w[1][1], w[1][2]);
         s.draw_line(p1, p2, U::random_color());
     });
-    space.tri_space.windows(3).step_by(3).for_each(|w| {
-        let view = (0.0, 0.0, 1.0);
+    let view = space.camera;
+    let t = space.tri_space.windows(3).step_by(3).filter(|w| {
         let p1 = (w[0][0], w[0][1], w[0][2]);
         let p2 = (w[1][0], w[1][1], w[1][2]);
         let p3 = (w[2][0], w[2][1], w[2][2]);
         let snorm = gmath::norm(p1, p2, p3);
-
-        if gmath::dot(snorm, view) > 0.0 {
-            s.draw_tri(p1, p2, p3, phong_color(p1, p2, p3, space));
-        }
+        gmath::dot(snorm, view) > 0.0
+    });
+    t.for_each(|w| {
+        let p1 = (w[0][0], w[0][1], w[0][2]);
+        let p2 = (w[1][0], w[1][1], w[1][2]);
+        let p3 = (w[2][0], w[2][1], w[2][2]);
+        s.draw_tri(p1, p2, p3, phong_color(p1, p2, p3, space))
     });
 }
