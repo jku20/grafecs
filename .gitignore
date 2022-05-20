@@ -4,3 +4,7 @@
 /gallery_scripts
 /imgs
 /data
+*.o
+*.mdl_intermediate_language
+*.yy.*
+*.tab.*

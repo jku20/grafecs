@@ -2,7 +2,6 @@
 ///you write its stuff to a screen
 use std::fmt::Debug;
 use std::sync::Arc;
-use rayon::prelude::*;
 
 use super::{Float, Light, Modtrix, Point};
 use crate::gmath;

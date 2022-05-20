@@ -42,14 +42,6 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::{self, Command, Stdio};
 
-use lrlex::{lrlex_mod, DefaultLexeme};
-use lrpar::{lrpar_mod, NonStreamingLexer, Span};
-
-lrlex_mod!("dwscript.l");
-lrpar_mod!("dwscript.y");
-
-use dwscript_y::Expr;
-
 mod draw;
 mod gmath;
 mod screen;
@@ -62,37 +54,18 @@ const IMAGE_WIDTH: usize = 500;
 const IMAGE_HEIGHT: usize = 500;
 
 fn run(script: &str) -> Result<(), Box<dyn Error>> {
-    let lexerdef = dwscript_l::lexerdef();
-    let lexer = lexerdef.lexer(script.trim());
-    let (res, errs) = dwscript_y::parse(&lexer);
+    let mut coords = vec![Modtrix::IDENT];
+    let mut scrn = Screen::<RGB8Color>::with_size(IMAGE_WIDTH, IMAGE_HEIGHT);
+    //adding stuff to space
+    let mut spc = Space::new();
+    spc.set_ambient_light((100, 100, 100).into());
+    let light = Light::new((5000.0, 7500.0, 10000.0), (0, 255, 255).into());
+    spc.add_light(light);
+    spc.set_ambient_reflection((0.1, 0.1, 0.1));
+    spc.set_diffuse_reflection((0.5, 0.5, 0.5));
+    spc.set_specular_reflection((0.5, 0.5, 0.5));
+    spc.set_camera((0.0, 0.0, 1.0));
 
-    for e in errs {
-        println!("{}", e.pp(&lexer, &dwscript_y::token_epp));
-    }
-    if let Some(Ok(r)) = res {
-        let mut coords = vec![Modtrix::IDENT];
-        let mut scrn = Screen::<RGB8Color>::with_size(IMAGE_WIDTH, IMAGE_HEIGHT);
-        //adding stuff to space
-        let mut spc = Space::new();
-        spc.set_ambient_light((100, 100, 100).into());
-        let light = Light::new((5000.0, 7500.0, 10000.0), (0, 255, 255).into());
-        spc.add_light(light);
-        spc.set_ambient_reflection((0.1, 0.1, 0.1));
-        spc.set_diffuse_reflection((0.5, 0.5, 0.5));
-        spc.set_specular_reflection((0.5, 0.5, 0.5));
-        spc.set_camera((0.0, 0.0, 1.0));
-
-        if let Err((span, msg)) = eval(&lexer, r, &mut coords, &mut spc, &mut scrn) {
-            let ((line, col), _) = lexer.line_col(span);
-            eprintln!(
-                "Error parsing scriptat line {} column {}, '{}' {}.",
-                line,
-                col,
-                lexer.span_str(span),
-                msg,
-            );
-        }
-    }
     Ok(())
 }
 
@@ -125,7 +98,8 @@ macro_rules! draw_to_screen {
     };
 }
 
-///Evaluates the AST built by the parser
+//Evaluates the AST built by the parser
+/*
 pub fn eval<'a>(
     lexer: &'a dyn NonStreamingLexer<DefaultLexeme, u32>,
     e: Expr,
@@ -454,3 +428,4 @@ pub fn eval<'a>(
         Expr::File { span } => Ok(lexer.span_str(span)),
     }
 }
+*/

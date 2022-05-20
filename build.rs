@@ -1,16 +1,9 @@
-use cfgrammar::yacc::YaccKind;
-use lrlex::CTLexerBuilder;
+use std::process::Command;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("cargo:rerun-if-changed=src/");
-    CTLexerBuilder::new()
-        .lrpar_config(|ctp| {
-            ctp.yacckind(YaccKind::Grmtools)
-                .recoverer(lrpar::RecoveryKind::None)
-                .grammar_in_src_dir("dwscript.y")
-                .unwrap()
-        })
-        .lexer_in_src_dir("dwscript.l")?
-        .build()?;
-    Ok(())
+fn main() {
+    let status = Command::new("make")
+        .current_dir("src/parser/")
+        .status()
+        .expect("failed to build DW dependency");
+    assert!(status.success());
 }
