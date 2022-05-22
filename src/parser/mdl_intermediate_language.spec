@@ -3,6 +3,8 @@ It should be simple.
 
 Each command is composed of an op code followed by a constant amount of arguments.
 Each op code is one byte and depending on that op code there will be some more data. The size of the rest of the data will be specified in this spec. The following are the op codes which NEED to be handeled
+
+The final binary file should be null terminated.
 --------------------------------------------------------
 0x01
 the "push" command

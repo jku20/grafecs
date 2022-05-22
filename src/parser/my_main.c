@@ -111,7 +111,7 @@ void my_main() {
     print_symtab();
     */
 
-    FILE *out = fopen("a.mdl_intermediate_language", "w+");
+    FILE *out = fopen("a.mdl_intermediate_language", "wb+");
     if (out == NULL) {
         perror("fopen");
         return;
@@ -132,9 +132,11 @@ void my_main() {
     const uint8_t line = 0x9;
     const uint8_t save = 0xA;
     const uint8_t display = 0xB;
+    const uint8_t end = 0x0;
     //write mdl_intermediate_language based off the spec file
     //this should be parsed in my graphics engine, probably with binread
-    for (int i=0;i<lastop;i++) { switch (op[i].opcode) {
+    for (int i=0;i<lastop;i++) {
+        switch (op[i].opcode) {
             case PUSH:
                 fwrite(&push, 1, 1, out);
                 break;
@@ -147,12 +149,12 @@ void my_main() {
                 break;
             case ROTATE:
                 fwrite(&rotate, 1, 1, out);
-                fwrite(&op[i].op.rotate.axis, 1, 1, out);
-                fwrite(&op[i].op.rotate.degrees, 1, 1, out);
+                fwrite(&op[i].op.rotate.axis, 8, 1, out);
+                fwrite(&op[i].op.rotate.degrees, 8, 1, out);
                 break;
             case SCALE:
                 fwrite(&scale, 1, 1, out);
-                fwrite(op[i].op.scale.d, 8, 1, out);
+                fwrite(op[i].op.scale.d, 8, 3, out);
                 break;
             case BOX:
                 fwrite(&box, 1, 1, out);
@@ -216,7 +218,7 @@ void my_main() {
                 break;
             case SAVE:
                 fwrite(&save, 1, 1, out);
-                fwrite(&op[i].op.save.p->name, 1, strlen(op[i].op.save.p->name) + 1, out);
+                fwrite(op[i].op.save.p->name, 1, strlen(op[i].op.save.p->name) + 1, out);
                 break;
             case DISPLAY:
                 fwrite(&display, 1, 1, out);
@@ -228,4 +230,5 @@ void my_main() {
                 break;
         }
     }
+    fwrite(&end, 1, 1, out);
 }

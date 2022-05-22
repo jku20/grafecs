@@ -154,7 +154,7 @@ pub fn draw_space<U: Color>(space: &Space<U>, s: &mut Screen<U>) {
     });
     let view = space.camera;
     let aspace = Arc::new(space);
-    let t: Vec<_> = space.tri_space.par_windows(3).step_by(3).filter_map(|w| {
+    let t: Vec<_> = space.tri_space.windows(3).step_by(3).filter_map(|w| {
         let p1 = (w[0][0], w[0][1], w[0][2]);
         let p2 = (w[1][0], w[1][1], w[1][2]);
         let p3 = (w[2][0], w[2][1], w[2][2]);

@@ -37,26 +37,22 @@
 
 use std::env;
 use std::error::Error;
-use std::fs::{self, File};
-use std::io::Write;
-use std::path::PathBuf;
-use std::process::{self, Command, Stdio};
+use std::fs;
+use std::process::{self, Command};
 
-mod draw;
-mod gmath;
-mod screen;
-mod space;
-
-use screen::{RGB8Color, Screen};
-use space::{Float, Light, Modtrix, Space};
+use binrw::io::Cursor;
+use binrw::BinRead;
 
 const IMAGE_WIDTH: usize = 500;
 const IMAGE_HEIGHT: usize = 500;
 
-fn run(script: &str) -> Result<(), Box<dyn Error>> {
+use graphics::{Light, Space, RGB8Color, Screen, Modtrix, Script};
+
+fn run(script: &Script) -> Result<(), Box<dyn Error>> {
     let mut coords = vec![Modtrix::IDENT];
     let mut scrn = Screen::<RGB8Color>::with_size(IMAGE_WIDTH, IMAGE_HEIGHT);
     //adding stuff to space
+    /*
     let mut spc = Space::new();
     spc.set_ambient_light((100, 100, 100).into());
     let light = Light::new((5000.0, 7500.0, 10000.0), (0, 255, 255).into());
@@ -65,15 +61,23 @@ fn run(script: &str) -> Result<(), Box<dyn Error>> {
     spc.set_diffuse_reflection((0.5, 0.5, 0.5));
     spc.set_specular_reflection((0.5, 0.5, 0.5));
     spc.set_camera((0.0, 0.0, 1.0));
+    */
+
 
     Ok(())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
-    let script = fs::read_to_string(&args.get(1).ok_or("No Input File Given")?)?;
+    Command::new("./deps/mdl")
+        .arg(args.get(1).ok_or("No Input File Given")?)
+        .status()
+        .expect("failed to create intermediate with dw mdl parser");
+    let script = fs::read("a.mdl_intermediate_language")?;
+    let mut input = Cursor::new(script);
+    let s = Script::read(&mut input).expect("could not read intermediate file");
 
-    match run(&script) {
+    match run(&s) {
         Err(e) => {
             eprintln!("{}", e);
             process::exit(1);
