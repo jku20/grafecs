@@ -4,7 +4,7 @@
 #include "symtab.h"
 #include "matrix.h"
 
-#define MAX_COMMANDS 512
+#define MAX_COMMANDS 7000000
 
 extern int lastop;
 
