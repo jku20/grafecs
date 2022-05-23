@@ -1,17 +1,33 @@
 use std::cmp::PartialEq;
+use std::process;
+use std::io::Write;
+use std::fs::{self, File};
+use std::path::PathBuf;
 
 use crate::{Color, Engine};
 use binrw::{BinRead, NullString};
 
 trait Run {
-    fn run<T: Color>(self, engine: Engine<T>);
+    fn run<T: Color>(self, engine: &mut Engine<T>);
 }
 
 #[derive(BinRead, PartialEq, Debug)]
 struct PushCommand { }
 
+impl Run for PushCommand {
+    fn run<T: Color>(self, engine: &mut Engine<T>) {
+        engine.push_sys();
+    }
+}
+
 #[derive(BinRead, PartialEq, Debug)]
 struct PopCommand { }
+
+impl Run for PopCommand {
+    fn run<T: Color>(self, engine: &mut Engine<T>) {
+        engine.pop_sys();
+    }
+}
 
 #[derive(BinRead, PartialEq, Debug)]
 struct MoveCommand {
@@ -20,10 +36,22 @@ struct MoveCommand {
     z: f64,
 }
 
+impl Run for MoveCommand {
+    fn run<T: Color>(self, engine: &mut Engine<T>) {
+        engine.move_sys(self.x, self.y, self.z);
+    }
+}
+
 #[derive(BinRead, PartialEq, Debug)]
 struct RotateCommand {
     axis: f64,
     theta: f64,
+}
+
+impl Run for RotateCommand {
+    fn run<T: Color>(self, engine: &mut Engine<T>) {
+        engine.rotate_sys(self.axis, self.theta);
+    }
 }
 
 #[derive(BinRead, PartialEq, Debug)]
@@ -31,6 +59,12 @@ struct ScaleCommand {
     x: f64,
     y: f64,
     z: f64,
+}
+
+impl Run for ScaleCommand {
+    fn run<T: Color>(self, engine: &mut Engine<T>) {
+        engine.scale_sys(self.x, self.y, self.z);
+    }
 }
 
 #[derive(BinRead, PartialEq, Debug)]
@@ -44,6 +78,17 @@ struct BoxCommand {
     constants: [f64; 9],
 }
 
+impl Run for BoxCommand {
+    fn run<T: Color>(self, engine: &mut Engine<T>) {
+        engine.set_constants(self.constants);
+        engine.add_box((self.x, self.y, self.z), self.h, self.w, self.d);
+        engine.apply_sys();
+        engine.draw_space();
+        engine.clear_lines();
+        engine.clear_tris();
+    }
+}
+
 #[derive(BinRead, PartialEq, Debug)]
 struct SphereCommand {
     x: f64,
@@ -51,6 +96,17 @@ struct SphereCommand {
     z: f64,
     r: f64,
     constants: [f64; 9],
+}
+
+impl Run for SphereCommand {
+    fn run<T: Color>(self, engine: &mut Engine<T>) {
+        engine.set_constants(self.constants);
+        engine.add_sphere((self.x, self.y, self.z), self.r);
+        engine.apply_sys();
+        engine.draw_space();
+        engine.clear_lines();
+        engine.clear_tris();
+    }
 }
 
 #[derive(BinRead, PartialEq, Debug)]
@@ -63,6 +119,17 @@ struct TorusCommand {
     constants: [f64; 9],
 }
 
+impl Run for TorusCommand {
+    fn run<T: Color>(self, engine: &mut Engine<T>) {
+        engine.set_constants(self.constants);
+        engine.add_torus((self.x, self.y, self.z), self.r0, self.r1);
+        engine.apply_sys();
+        engine.draw_space();
+        engine.clear_lines();
+        engine.clear_tris();
+    }
+}
+
 #[derive(BinRead, PartialEq, Debug)]
 struct LineCommand {
     x0: f64,
@@ -73,13 +140,56 @@ struct LineCommand {
     z1: f64,
 }
 
+impl Run for LineCommand {
+    fn run<T: Color>(self, engine: &mut Engine<T>) {
+        engine.add_line((self.x0, self.y0, self.z0), (self.x1, self.y1, self.z1));
+        engine.apply_sys();
+        engine.draw_space();
+        engine.clear_lines();
+        engine.clear_tris();
+    }
+}
+
 #[derive(BinRead, PartialEq, Debug)]
 struct SaveCommand {
     file: NullString,
 }
 
+impl Run for SaveCommand {
+    fn run<T: Color>(self, engine: &mut Engine<T>) {
+        let file_name = self.file.to_string();
+        let file_ppm = format!(".tmp_convertfilelhfgfhgf{}.ppm", file_name);
+        let path = PathBuf::from(&file_ppm);
+        let mut file = File::create(&path).expect("failed to create file path");
+        engine.write_binary_ppm(&mut file);
+        process::Command::new("convert")
+            .arg(&file_ppm)
+            .arg(&file_name)
+            .status()
+            .expect("failed to convert tmp file to png");
+        fs::remove_file(&file_ppm).expect("failed to remove tmp ppm file");
+    }
+}
+
 #[derive(BinRead, PartialEq, Debug)]
 struct DisplayCommand { }
+
+impl Run for DisplayCommand {
+    fn run<T: Color>(self, engine: &mut Engine<T>) {
+        let mut display_command = process::Command::new("display")
+            .stdin(process::Stdio::piped())
+            .spawn()
+            .expect("failed to display image with image magick display");
+
+        display_command
+            .stdin
+            .as_mut()
+            .expect("failed to display image with image magick display")
+            .write_all(&engine.ppm_byte_vec())
+            .expect("failed to display image with image magick display");
+        display_command.wait().expect("failed to display image with image magick display");
+    }
+}
 
 #[derive(BinRead, PartialEq, Debug)]
 enum Command {
@@ -113,4 +223,25 @@ enum Command {
 pub struct Script {
     #[br(parse_with = binrw::until(|com| *com == Command::End))]
     commands: Vec<Command>,
+}
+
+impl Script {
+    pub fn exec<T: Color>(self, eng: &mut Engine<T>) {
+        for com in self.commands {
+            match com {
+                Command::Push(c) => c.run(eng),
+                Command::Pop(c) => c.run(eng),
+                Command::Move(c) => c.run(eng),
+                Command::Rotate(c) => c.run(eng),
+                Command::Scale(c) => c.run(eng),
+                Command::Box(c) => c.run(eng),
+                Command::Sphere(c) => c.run(eng),
+                Command::Torus(c) => c.run(eng),
+                Command::Line(c) => c.run(eng),
+                Command::Save(c) => c.run(eng),
+                Command::Display(c) => c.run(eng),
+                Command::End => (),
+            }
+        }
+    }
 }
