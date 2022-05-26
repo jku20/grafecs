@@ -110,6 +110,8 @@ impl<T: Color> Screen<T> {
 
     ///Draws a triangle of pixels to the screen
     pub fn draw_tri(&mut self, p1: Point, p2: Point, p3: Point, color: T) {
+        //the scanline conversion algo used is a accuarate version by Yusuf
+        //the implementation is by me
         let (mut tt, mut tm, mut tb) = (p1, p2, p3);
         if tm.1 > tt.1 {
             (tt, tm) = (tm, tt);
@@ -121,89 +123,66 @@ impl<T: Color> Screen<T> {
             (tt, tm) = (tm, tt);
         }
 
-        //implementation based off of dw's to have less error
-        let mut x0 = tb.0;
-        let mut x1 = tb.0;
-        let mut z0 = tb.2;
-        let mut z1 = tb.2;
-        let mut y = tb.1 as i32;
+        let dxbm = (tm.0 - tb.0) / (tm.1 - tb.1);
+        let dzbm = (tm.2 - tb.2) / (tm.1 - tb.1);
+        let dxmt = (tt.0 - tm.0) / (tt.1 - tm.1);
+        let dzmt = (tt.2 - tm.2) / (tt.1 - tm.1);
+        let dxbt = (tt.0 - tb.0) / (tt.1 - tb.1);
+        let dzbt = (tt.2 - tb.2) / (tt.1 - tb.1);
 
-        let dist0 = tt.1 as i32 - y + 1;
-        let dist1 = tm.1 as i32 - y + 1;
-        let dist2 = tt.1 as i32 - tm.1 as i32 + 1;
+        let left_to_right = dxbm < dxbt;
 
-        let dx0 = if dist0 > 0 {
-            (tt.0 - tb.0) / dist0 as Float
-        } else {
-            0.0
-        };
-        let mut dx1 = if dist1 > 0 {
-            (tm.0 - tb.0) / dist1 as Float
-        } else {
-            0.0
-        };
+        let mut x0 = tb.0 + dxbm * (tb.1.ceil() - tb.1);
+        let mut z0 = tb.2 + dzbm * (tb.1.ceil() - tb.1);
 
-        let dz0 = if dist0 > 0 {
-            (tt.2 - tb.2) / dist0 as Float
-        } else {
-            0.0
-        };
-        let mut dz1 = if dist1 > 0 {
-            (tm.2 - tb.2) / dist1 as Float
-        } else {
-            0.0
-        };
+        let mut x1 = tb.0 + dxbt * (tb.1.ceil() - tb.1);
+        let mut z1 = tb.2 + dzbt * (tb.1.ceil() - tb.1);
 
-        let mut flip = false;
-        while y <= tt.1 as i32 {
-            if !flip && y >= tm.1 as i32 {
-                flip = true;
-                dx1 = if dist2 > 0 {
-                    (tt.0 - tm.0) / dist2 as Float
-                } else {
-                    0.0
-                };
-                dz1 = if dist2 > 0 {
-                    (tt.2 - tm.2) / dist2 as Float
-                } else {
-                    0.0
-                };
-                x1 = tm.0;
-                z1 = tm.2;
-            }
-
-            let (x_start, x_end, z_start, z_end);
-            if x0 > x1 {
-                x_start = x1 as i32;
-                x_end = x0 as i32;
-                z_start = z1;
-                z_end = z0;
+        for y in tb.1.ceil() as i32..=tm.1.floor() as i32 {
+            if left_to_right {
+                let dz = (z1 - z0) / (x1.floor() - x0.ceil() + 1.0);
+                let mut z = z0;
+                for x in x0.ceil() as i32..=x1.floor() as i32 {
+                    self.plot(x, y, z, color);
+                    z += dz;
+                }
             } else {
-                x_start = x0 as i32;
-                x_end = x1 as i32;
-                z_start = z0;
-                z_end = z1;
+                let dz = (z0 - z1) / (x0.floor() - x1.ceil() + 1.0);
+                let mut z = z1;
+                for x in x1.ceil() as i32..=x0.floor() as i32 {
+                    self.plot(x, y, z, color);
+                    z += dz;
+                }
             }
+            x0 += dxbm;
+            z0 += dzbm;
+            x1 += dxbt;
+            z1 += dzbt;
+        }
 
-            let delta_z = if x_end - x_start != 0 {
-                (z_end - z_start) / (x_end - x_start + 1) as Float
+        x0 = tm.0 + dxmt * (tm.1.ceil() - tm.1);
+        z0 = tm.2 + dzmt * (tm.1.ceil() - tm.1);
+
+        for y in tm.1.ceil() as i32..=tt.1.floor() as i32 {
+            if left_to_right {
+                let dz = (z1 - z0) / (x1.floor() - x0.ceil() + 1.0);
+                let mut z = z0;
+                for x in x0.ceil() as i32..=x1.floor() as i32 {
+                    self.plot(x, y, z, color);
+                    z += dz;
+                }
             } else {
-                0.0
-            };
-
-            let mut z = z_start;
-            let mut x = x_start;
-            while x <= x_end {
-                self.plot(x, y, z, color);
-                z += delta_z;
-                x += 1;
+                let dz = (z0 - z1) / (x0.floor() - x1.ceil() + 1.0);
+                let mut z = z1;
+                for x in x1.ceil() as i32..=x0.floor() as i32 {
+                    self.plot(x, y, z, color);
+                    z += dz;
+                }
             }
-
-            x0 += dx0;
-            x1 += dx1;
-            z0 += dz0;
-            z1 += dz1;
-            y += 1;
+            x0 += dxmt;
+            z0 += dzmt;
+            x1 += dxbt;
+            z1 += dzbt;
         }
     }
 
