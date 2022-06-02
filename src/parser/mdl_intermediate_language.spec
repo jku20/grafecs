@@ -58,3 +58,21 @@ following the png is a null terminated ascii string representing the file name
 
 0x0B
 the display command, it displays the image
+
+0x0C
+the basename command, following it is a null terminated ascii string representing the base file name
+
+0x0D
+if the script represents and animation, this is the number of frames in that animation
+that number of frames is represented as a 32bit unsigned integer following the command
+
+0x0E
+the vary command
+following is a null string representing the name a knob
+these ids should be unique to every differnt knob
+following that are the frame numbers the animation will go over, both 32bit unsigned integers
+these are inclusive on both ends, first the start frame and the nthe end frame
+the next two numbers are two 64bit floats between 0 and 1 representing
+how far along the animation starts into the transformation and at what point it ends
+0 means no transformation has been done, 1 means the entire transformation is completed
+first the start value then the end value

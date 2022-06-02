@@ -192,6 +192,25 @@ impl Run for DisplayCommand {
 }
 
 #[derive(BinRead, PartialEq, Debug)]
+struct BasenameCommand {
+    basename: NullString,
+}
+
+#[derive(BinRead, PartialEq, Debug)]
+struct FramesCommand {
+    frames: u32,
+}
+
+#[derive(BinRead, PartialEq, Debug)]
+struct VaryCommand {
+    knob: NullString,
+    start_frame: u32,
+    end_frame: u32,
+    start_val: f64,
+    end_val: f64,
+}
+
+#[derive(BinRead, PartialEq, Debug)]
 enum Command {
     #[br(magic = 0x1u8)]
     Push(PushCommand),
@@ -215,6 +234,12 @@ enum Command {
     Save(SaveCommand),
     #[br(magic = 0xBu8)]
     Display(DisplayCommand),
+    #[br(magic = 0xCu8)]
+    Basename(BasenameCommand),
+    #[br(magic = 0xDu8)]
+    Frames(FramesCommand),
+    #[br(magic = 0xEu8)]
+    Vary(VaryCommand),
     #[br(magic = 0x0u8)]
     End,
 }
@@ -240,6 +265,9 @@ impl Script {
                 Command::Line(c) => c.run(eng),
                 Command::Save(c) => c.run(eng),
                 Command::Display(c) => c.run(eng),
+                Command::Basename(c) => println!("{:?}", c),
+                Command::Frames(c) => println!("{:?}", c),
+                Command::Vary(c) => println!("{:?}", c),
                 Command::End => (),
             }
         }

@@ -132,7 +132,13 @@ void my_main() {
     const uint8_t line = 0x9;
     const uint8_t save = 0xA;
     const uint8_t display = 0xB;
+    const uint8_t basename = 0xC;
+    const uint8_t frames = 0xD;
+    const uint8_t vary = 0xE;
     const uint8_t end = 0x0;
+
+    uint32_t vary_ids = 1;
+
     //write mdl_intermediate_language based off the spec file
     //this should be parsed in my graphics engine, probably with binread
     for (int i=0;i<lastop;i++) {
@@ -222,6 +228,26 @@ void my_main() {
                 break;
             case DISPLAY:
                 fwrite(&display, 1, 1, out);
+                break;
+            case BASENAME:
+                fwrite(&basename, 1, 1, out);
+                fwrite(op[i].op.basename.p->name, 1, strlen(op[i].op.basename.p->name) + 1, out);
+                break;
+            case FRAMES:
+                fwrite(&frames, 1, 1, out);
+                uint32_t num_frames = (uint32_t) op[i].op.frames.num_frames;
+                fwrite(&num_frames, 4, 1, out);
+                break;
+            case VARY:
+                fwrite(&vary, 1, 1, out);
+                fwrite(op[i].op.vary.p->name, 1, strlen(op[i].op.basename.p->name) + 1, out);
+
+                uint32_t start_frame = (uint32_t) op[i].op.vary.start_frame;
+                uint32_t end_frame = (uint32_t) op[i].op.vary.end_frame;
+                fwrite(&start_frame, 4, 1, out);
+                fwrite(&end_frame, 4, 1, out);
+                fwrite(&op[i].op.vary.start_val, 8, 1, out);
+                fwrite(&op[i].op.vary.end_val, 8, 1, out);
                 break;
             case CONSTANTS:
                 break;
