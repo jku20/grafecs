@@ -154,19 +154,23 @@ pub fn draw_space<U: Color>(space: &Space<U>, s: &mut Screen<U>) {
     });
     let view = space.camera;
     let aspace = Arc::new(space);
-    let t: Vec<_> = space.tri_space.windows(3).step_by(3).filter_map(|w| {
-        let p1 = (w[0][0], w[0][1], w[0][2]);
-        let p2 = (w[1][0], w[1][1], w[1][2]);
-        let p3 = (w[2][0], w[2][1], w[2][2]);
-        let snorm = gmath::norm(p1, p2, p3);
-        if gmath::dot(snorm, view) > 0.0 {
-            Some((p1, p2, p3, phong_color(p1, p2, p3, aspace.clone())))
-        } else {
-            None
-        }
-    }).collect();
+    let t: Vec<_> = space
+        .tri_space
+        .windows(3)
+        .step_by(3)
+        .filter_map(|w| {
+            let p1 = (w[0][0], w[0][1], w[0][2]);
+            let p2 = (w[1][0], w[1][1], w[1][2]);
+            let p3 = (w[2][0], w[2][1], w[2][2]);
+            let snorm = gmath::norm(p1, p2, p3);
+            if gmath::dot(snorm, view) > 0.0 {
+                Some((p1, p2, p3, phong_color(p1, p2, p3, aspace.clone())))
+            } else {
+                None
+            }
+        })
+        .collect();
 
-    t.iter().for_each(|&(p1, p2, p3, c)| {
-        s.draw_tri(p1, p2, p3, c)
-    });
+    t.iter()
+        .for_each(|&(p1, p2, p3, c)| s.draw_tri(p1, p2, p3, c));
 }

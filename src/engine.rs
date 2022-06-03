@@ -1,13 +1,7 @@
-use std::fs::File;
 use std::collections::HashMap;
+use std::fs::File;
 
-use crate::{Modtrix, Color, Space, Screen, Light};
-
-pub enum TransformConstants {
-    Move { x: f64, y: f64, z: f64 },
-    Rotate { axis: f64, theta: f64 },
-    Scale { x: f64, y: f64, z: f64 },
-}
+use crate::{Color, Light, Modtrix, Screen, Space};
 
 pub struct Engine<T: Color> {
     stack: Vec<Modtrix>,
@@ -30,9 +24,12 @@ impl<T: Color> Engine<T> {
     ///sets the constants of the space, takes an array of nine f64 values:
     ///[Ka_r, Ka_g, Ka_b, Kd_r, Kd_g, Kd_b, Ks_r, Ks_g, Ks_b]
     pub fn set_constants(&mut self, constants: [f64; 9]) {
-        self.space.set_ambient_reflection((constants[0], constants[1], constants[2]));
-        self.space.set_diffuse_reflection((constants[3], constants[4], constants[5]));
-        self.space.set_specular_reflection((constants[6], constants[7], constants[8]));
+        self.space
+            .set_ambient_reflection((constants[0], constants[1], constants[2]));
+        self.space
+            .set_diffuse_reflection((constants[3], constants[4], constants[5]));
+        self.space
+            .set_specular_reflection((constants[6], constants[7], constants[8]));
     }
 
     pub fn push_sys(&mut self) {
@@ -55,7 +52,7 @@ impl<T: Color> Engine<T> {
             crate::roty_matrix!(theta)
         } else if axis == 2.0 {
             crate::rotz_matrix!(theta)
-        } else{
+        } else {
             panic!("attempt to rotate by invalid axis");
         };
 
@@ -104,7 +101,9 @@ impl<T: Color> Engine<T> {
     }
 
     pub fn write_binary_ppm(&self, file: &mut File) {
-        self.screen.write_binary_ppm(file).expect("failed to write binary ppm");
+        self.screen
+            .write_binary_ppm(file)
+            .expect("failed to write binary ppm");
     }
 
     pub fn add_light(&mut self, light: Light<T>) {
@@ -119,10 +118,21 @@ impl<T: Color> Engine<T> {
         self.space.set_ambient_light(color);
     }
 
-    pub fn add_vary(&mut self, name: String, start_frame: u32, end_frame: u32, v0: f64, v1: f64, total_frames: u32) {
+    pub fn add_vary(
+        &mut self,
+        name: String,
+        start_frame: u32,
+        end_frame: u32,
+        v0: f64,
+        v1: f64,
+        total_frames: u32,
+    ) {
         //currently assume transformation totally done if outside specified vary ammount
         //this should mean the indexing following won't fail
-        let frames = self.frames.entry(name).or_insert(vec![1.0; total_frames as usize + 1]);
+        let frames = self
+            .frames
+            .entry(name)
+            .or_insert(vec![1.0; total_frames as usize + 1]);
         let df = (end_frame - start_frame) as f64;
         for (i, f) in (start_frame..=end_frame).enumerate() {
             frames[f as usize] = v0 + i as f64 * (v1 - v0) / df;

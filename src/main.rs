@@ -24,7 +24,7 @@ use binrw::BinRead;
 const IMAGE_WIDTH: usize = 500;
 const IMAGE_HEIGHT: usize = 500;
 
-use graphics::{RGB8Color, Light, Script, Engine};
+use graphics::{Engine, Light, RGB8Color, Script};
 
 fn run(script: Script) -> Result<(), Box<dyn Error>> {
     let mut eng = Engine::<RGB8Color>::with_screen_dims(IMAGE_WIDTH, IMAGE_HEIGHT);

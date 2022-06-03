@@ -1,10 +1,10 @@
 use std::cmp::PartialEq;
-use std::process;
-use std::io::Write;
 use std::fs::{self, File};
+use std::io::Write;
 use std::path::PathBuf;
+use std::process;
 
-use crate::{Color, Engine, TransformConstants};
+use crate::{Color, Engine};
 use binrw::{BinRead, NullString};
 
 #[derive(BinRead, PartialEq, Debug)]
@@ -25,7 +25,7 @@ trait Knobular {
 }
 
 #[derive(BinRead, PartialEq, Debug)]
-struct PushCommand { }
+struct PushCommand {}
 
 impl Run for PushCommand {
     fn run<T: Color>(&self, engine: &mut Engine<T>) {
@@ -34,7 +34,7 @@ impl Run for PushCommand {
 }
 
 #[derive(BinRead, PartialEq, Debug)]
-struct PopCommand { }
+struct PopCommand {}
 
 impl Run for PopCommand {
     fn run<T: Color>(&self, engine: &mut Engine<T>) {
@@ -221,7 +221,7 @@ impl Run for SaveCommand {
 }
 
 #[derive(BinRead, PartialEq, Debug)]
-struct DisplayCommand { }
+struct DisplayCommand {}
 
 impl Run for DisplayCommand {
     fn run<T: Color>(&self, engine: &mut Engine<T>) {
@@ -236,7 +236,9 @@ impl Run for DisplayCommand {
             .expect("failed to display image with image magick display")
             .write_all(&engine.ppm_byte_vec())
             .expect("failed to display image with image magick display");
-        display_command.wait().expect("failed to display image with image magick display");
+        display_command
+            .wait()
+            .expect("failed to display image with image magick display");
     }
 }
 
@@ -302,41 +304,72 @@ pub struct Script {
 impl Script {
     pub fn exec<T: Color>(self, eng: &mut Engine<T>) {
         // if there are more than one frames/basenames commands, we take the last one stated
-        let has_frames = self.commands.iter().rev().find(|x| matches!(x, Command::Frames(_)));
-        let has_basename = self.commands.iter().rev().find(|x| matches!(x, Command::Basename(_)));
+        let has_frames = self
+            .commands
+            .iter()
+            .rev()
+            .find(|x| matches!(x, Command::Frames(_)));
+        let has_basename = self
+            .commands
+            .iter()
+            .rev()
+            .find(|x| matches!(x, Command::Basename(_)));
         let has_vary = self.commands.iter().any(|x| matches!(x, Command::Vary(_)));
 
         if has_vary && has_frames == None {
-            panic!("this is all a terrible misunderstanding, 
-            you need a frames command with your vary");
+            panic!(
+                "this is all a terrible misunderstanding, 
+            you need a frames command with your vary"
+            );
         }
 
         if has_frames != None && has_basename == None {
-            println!("woah there, you either forgot to put a basename or want to use the default,
-            be sure that is actually what you want buddy");
+            println!(
+                "woah there, you either forgot to put a basename or want to use the default,
+            be sure that is actually what you want buddy"
+            );
         }
 
         let basename = match has_basename {
             None => "generic_mdl_animation".to_string(),
-            Some(s) => if let Command::Basename(BasenameCommand { basename }) = s {
-                basename.to_string()
-            } else {
-                "generic_mdl_animation".to_string()
+            Some(s) => {
+                if let Command::Basename(BasenameCommand { basename }) = s {
+                    basename.to_string()
+                } else {
+                    "generic_mdl_animation".to_string()
+                }
             }
         };
 
         if let Some(frames_command) = has_frames {
             //create an animation
             let frames;
-            if let &Command::Frames(FramesCommand {frames: x}) = frames_command {
+            if let &Command::Frames(FramesCommand { frames: x }) = frames_command {
                 frames = x;
             } else {
                 panic!("bad bad very bad, I literly filtered for only frame commands");
             }
-            for v in self.commands.iter().filter(|x| matches!(x, Command::Vary(_))) {
+            for v in self
+                .commands
+                .iter()
+                .filter(|x| matches!(x, Command::Vary(_)))
+            {
                 if let Command::Vary(vc) = v {
-                    let VaryCommand { knob, start_frame, end_frame, start_val, end_val} = vc;
-                    eng.add_vary(knob.to_string(), *start_frame, *end_frame, *start_val, *end_val, frames);
+                    let VaryCommand {
+                        knob,
+                        start_frame,
+                        end_frame,
+                        start_val,
+                        end_val,
+                    } = vc;
+                    eng.add_vary(
+                        knob.to_string(),
+                        *start_frame,
+                        *end_frame,
+                        *start_val,
+                        *end_val,
+                        frames,
+                    );
                 } else {
                     panic!("bad bad very bad, I literly filtered for only vary commands");
                 }
@@ -383,11 +416,10 @@ impl Script {
             //TODO:make the fps not stuck at 60
             process::Command::new("convert")
                 .arg(format!("{}*.png", basename))
+                .args(["-delay", "1.7"])
                 .arg(format!("{}.gif", basename))
-                .arg("-delay 1.7")
                 .status()
                 .expect("failed to convert files to gif");
-            fs::remove_file(format!("{}*.png", basename)).expect("failed to remove created files");
         } else {
             //create a still image
             for com in self.commands {
@@ -403,7 +435,9 @@ impl Script {
                     Command::Line(c) => c.run(eng),
                     Command::Save(c) => c.run(eng),
                     Command::Display(c) => c.run(eng),
-                    Command::Basename(_) => println!("you sure you want a basename in this script?"),
+                    Command::Basename(_) => {
+                        println!("you sure you want a basename in this script?")
+                    }
                     Command::Frames(_) => panic!("bad bad very bad this should be impossible"),
                     Command::Vary(_) => panic!("bad bad very bad this should be impossible"),
                     Command::End => (),
