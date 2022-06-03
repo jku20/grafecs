@@ -136,6 +136,8 @@ void my_main() {
     const uint8_t frames = 0xD;
     const uint8_t vary = 0xE;
     const uint8_t end = 0x0;
+    const uint8_t has_knob = 0x1;
+    const uint8_t has_no_knob = 0x0;
 
     uint32_t vary_ids = 1;
 
@@ -152,15 +154,33 @@ void my_main() {
             case MOVE:
                 fwrite(&move, 1, 1, out);
                 fwrite(op[i].op.move.d, 8, 3, out);
+                if (op[i].op.move.p != NULL) {
+                    fwrite(&has_knob, 1, 1, out);
+                    fwrite(op[i].op.move.p->name, 1, strlen(op[i].op.move.p->name) + 1, out);
+                } else {
+                    fwrite(&has_no_knob, 1, 1, out);
+                }
                 break;
             case ROTATE:
                 fwrite(&rotate, 1, 1, out);
                 fwrite(&op[i].op.rotate.axis, 8, 1, out);
                 fwrite(&op[i].op.rotate.degrees, 8, 1, out);
+                if (op[i].op.rotate.p != NULL) {
+                    fwrite(&has_knob, 1, 1, out);
+                    fwrite(op[i].op.rotate.p->name, 1, strlen(op[i].op.rotate.p->name) + 1, out);
+                } else {
+                    fwrite(&has_no_knob, 1, 1, out);
+                }
                 break;
             case SCALE:
                 fwrite(&scale, 1, 1, out);
                 fwrite(op[i].op.scale.d, 8, 3, out);
+                if (op[i].op.scale.p != NULL) {
+                    fwrite(&has_knob, 1, 1, out);
+                    fwrite(op[i].op.scale.p->name, 1, strlen(op[i].op.scale.p->name) + 1, out);
+                } else {
+                    fwrite(&has_no_knob, 1, 1, out);
+                }
                 break;
             case BOX:
                 fwrite(&box, 1, 1, out);

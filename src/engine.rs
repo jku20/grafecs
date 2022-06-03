@@ -1,11 +1,19 @@
 use std::fs::File;
+use std::collections::HashMap;
 
 use crate::{Modtrix, Color, Space, Screen, Light};
+
+pub enum TransformConstants {
+    Move { x: f64, y: f64, z: f64 },
+    Rotate { axis: f64, theta: f64 },
+    Scale { x: f64, y: f64, z: f64 },
+}
 
 pub struct Engine<T: Color> {
     stack: Vec<Modtrix>,
     space: Space<T>,
     screen: Screen<T>,
+    frames: HashMap<String, Vec<f64>>,
 }
 
 impl<T: Color> Engine<T> {
@@ -15,6 +23,7 @@ impl<T: Color> Engine<T> {
             stack: vec![Modtrix::IDENT],
             space: Space::new(),
             screen: Screen::<T>::with_size(screen_width, screen_height),
+            frames: HashMap::new(),
         }
     }
 
@@ -108,5 +117,27 @@ impl<T: Color> Engine<T> {
 
     pub fn set_ambient_light(&mut self, color: T) {
         self.space.set_ambient_light(color);
+    }
+
+    pub fn add_vary(&mut self, name: String, start_frame: u32, end_frame: u32, v0: f64, v1: f64, total_frames: u32) {
+        //currently assume transformation totally done if outside specified vary ammount
+        //this should mean the indexing following won't fail
+        let frames = self.frames.entry(name).or_insert(vec![1.0; total_frames as usize + 1]);
+        let df = (end_frame - start_frame) as f64;
+        for (i, f) in (start_frame..=end_frame).enumerate() {
+            frames[f as usize] = v0 + i as f64 * (v1 - v0) / df;
+        }
+    }
+
+    pub fn get_knob_val(&self, name: String, frame: u32) -> f64 {
+        self.frames.get(&name).unwrap()[frame as usize]
+    }
+
+    pub fn clear_screen(&mut self) {
+        self.screen.clear();
+    }
+
+    pub fn clear_stack(&mut self) {
+        self.stack = vec![Modtrix::IDENT];
     }
 }

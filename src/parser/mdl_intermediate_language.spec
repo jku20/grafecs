@@ -12,20 +12,26 @@ the "push" command
 the "pop" command
 
 0x03
-the simplist version of the "move" command
+the "move" command
 following this code are three f64 floating point values
 these represent the x, y, and z coordinates of the move
+following these is one byte, 0x01 if there is a knob followed
+the by a null terminated string, or 0x00 if there is none
 
 0x04
-the simplist version of the "rotate" command
+the "rotate" command
 following it will be one f64 with the value 0 for 'x', 1 for 'y', or 2 for 'z'
 representing the axis to rotate around
 following that will be a f64 representing the degrees to rotate
+following these is one byte, 0x01 if there is a knob followed
+the by a null terminated string, or 0x00 if there is none
 
 0x05
-the simplist version of the "scale" command
+the "scale" command
 following it will be three f64 floating point values
 these represent how much to scale in the x, y, and z directions
+following these is one byte, 0x01 if there is a knob followed
+the by a null terminated string, or 0x00 if there is none
 
 0x06
 the simplist version of box
