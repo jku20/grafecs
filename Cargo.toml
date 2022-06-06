@@ -10,3 +10,4 @@ build = "build.rs"
 [dependencies]
 rand = "0.8.5"
 binrw = "0.8.4"
+rayon = "1.5.3"

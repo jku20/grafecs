@@ -7,6 +7,7 @@ use std::process::Stdio;
 
 use crate::{Color, Engine};
 use binrw::{BinRead, NullString};
+use rayon::prelude::*;
 
 #[derive(BinRead, PartialEq, Debug)]
 enum Knob {
@@ -376,7 +377,9 @@ impl Script {
                 }
             }
 
-            let frame_array = (0..frames).map(|f| {
+            let frame_array = (0..frames).into_par_iter().map(|f| {
+                //should be fine as eng should be close to empty
+                let eng = &mut eng.clone();
                 for com in self.commands.iter() {
                     match com {
                         Command::Push(c) => c.run(eng),
@@ -403,7 +406,8 @@ impl Script {
                 eng.clear_stack();
 
                 out
-            });
+            })
+            .collect::<Vec<_>>();
             let convert_command = format!("convert -delay 1.7 -loop 0 - {}.gif", basename);
             let mut convert = process::Command::new("sh")
                 .args(["-c", &convert_command])
@@ -411,7 +415,7 @@ impl Script {
                 .spawn()
                 .expect("failed to spawn convert command");
 
-            frame_array.for_each(|frame| {
+            frame_array.into_iter().for_each(|frame| {
                 convert.stdin.as_mut().unwrap().write_all(&frame).unwrap();
             });
             convert.wait().unwrap();

@@ -3,6 +3,7 @@ use std::fs::File;
 
 use crate::{Color, Light, Modtrix, Screen, Space};
 
+#[derive(Debug, Clone)]
 pub struct Engine<T: Color> {
     stack: Vec<Modtrix>,
     space: Space<T>,

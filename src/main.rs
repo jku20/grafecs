@@ -21,8 +21,10 @@ use std::process::{self, Command};
 use binrw::io::Cursor;
 use binrw::BinRead;
 
-const IMAGE_WIDTH: usize = 500;
-const IMAGE_HEIGHT: usize = 500;
+///default width of an image
+pub const IMAGE_WIDTH: usize = 500;
+///default height of an image
+pub const IMAGE_HEIGHT: usize = 500;
 
 use graphics::{Engine, Light, RGB8Color, Script};
 
