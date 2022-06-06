@@ -3,6 +3,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::PathBuf;
 use std::process;
+use std::process::Stdio;
 
 use crate::{Color, Engine};
 use binrw::{BinRead, NullString};
@@ -375,7 +376,7 @@ impl Script {
                 }
             }
 
-            for f in 0..frames {
+            let frame_array = (0..frames).map(|f| {
                 for com in self.commands.iter() {
                     match com {
                         Command::Push(c) => c.run(eng),
@@ -395,31 +396,25 @@ impl Script {
                         Command::End => (),
                     }
                 }
-                let file_name = format!("{}{:0>8}.png", basename, f);
-                let file_ppm = format!(".tmp_convertfilelhfgfhgf{}.ppm", file_name);
-                let path = PathBuf::from(&file_ppm);
-                let mut file = File::create(&path).expect("failed to create file path");
-                eng.write_binary_ppm(&mut file);
-                process::Command::new("convert")
-                    .arg(&file_ppm)
-                    .arg(&file_name)
-                    .status()
-                    .expect("failed to convert tmp file to png");
-                fs::remove_file(&file_ppm).expect("failed to remove tmp ppm file");
-
+                let out = eng.ppm_byte_vec();
                 eng.clear_tris();
                 eng.clear_lines();
                 eng.clear_screen();
                 eng.clear_stack();
-            }
 
-            //TODO:make the fps not stuck at 60
-            process::Command::new("convert")
-                .arg(format!("{}*.png", basename))
-                .args(["-delay", "1.7"])
-                .arg(format!("{}.gif", basename))
-                .status()
-                .expect("failed to convert files to gif");
+                out
+            });
+            let convert_command = format!("convert -delay 1.7 -loop 0 - {}.gif", basename);
+            let mut convert = process::Command::new("sh")
+                .args(["-c", &convert_command])
+                .stdin(Stdio::piped())
+                .spawn()
+                .expect("failed to spawn convert command");
+
+            frame_array.for_each(|frame| {
+                convert.stdin.as_mut().unwrap().write_all(&frame).unwrap();
+            });
+            convert.wait().unwrap();
         } else {
             //create a still image
             for com in self.commands {
